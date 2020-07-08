@@ -444,7 +444,9 @@ check_accuracy <- function(
     return(output_list)
 }
 
-# internal function to estimate factor means and se"s
+#' function to estimate factor means and se's
+#' 
+#' @keywords internal 
 extract_omega_lambda_mean_se <- function(
     x,
     dim_order,

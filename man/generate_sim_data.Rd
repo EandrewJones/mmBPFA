@@ -31,7 +31,7 @@ generate_sim_data(
 
 \item{K_true}{True number of latent dimensions. Default is 10.}
 
-\item{sparsity}{Numeric value between [0, 1] that determines amount of sparsity in the factor loadings. If sparsity argument is set, zeros are uniformly distributed across all dimensions. Default is NULL.}
+\item{sparsity}{Numeric value between \link{0, 1} that determines amount of sparsity in the factor loadings. If sparsity argument is set, zeros are uniformly distributed across all dimensions. Default is NULL.}
 
 \item{a}{A hyperparameter determining the distribution of sparsity across the factor loadings. Default is 10}
 
@@ -41,16 +41,16 @@ generate_sim_data(
 
 \item{e}{A hyperparameter determining the scale of the factor precisions (gamma_k). Default is 1.}
 
-\item{prop_missing}{Numeric value between [0, 1] determining the proportion of missingness in the data. Default is 0.}
+\item{prop_missing}{Numeric value between \link{0, 1} determining the proportion of missingness in the data. Default is 0.}
 
-\item{noise}{Numeric value between [0, 1] determining how much noise should be induced into the data. Default is 0.05.}
+\item{noise}{Numeric value between \link{0, 1} determining how much noise should be induced into the data. Default is 0.05.}
 
 \item{seed}{Random seed. Default is 123.}
 }
 \value{
-S3 object of class `mmBPFA.simulated.data` containing generated data and true underlying values. Attributes note the user-given arguments.
+S3 object of class \code{mmBPFA.simulated.data} containing generated data and true underlying values. Attributes note the user-given arguments.
 }
 \description{
-\code{generate_sim_data} produces simulated data that can be used for testing 
+\code{generate_sim_data} produces simulated data that can be used for testing
 the mmBPFA sampler prior to production runs to ensure it will behave as expected.
 }

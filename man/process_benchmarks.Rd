@@ -7,13 +7,13 @@
 process_benchmarks(mcmc_object)
 }
 \arguments{
-\item{mcmc_object}{A S3 object of class `bpfa.results` containing benchmarks.}
+\item{mcmc_object}{A S3 object of class \code{bpfa.results} containing benchmarks.}
 }
 \value{
 A list containing the raw benchmarks and average timing per sample step.
 }
 \description{
-\code{process_benchmarks} ingests the raw results from \code{mmBPFA_sampler} and 
+\code{process_benchmarks} ingests the raw results from \code{mmBPFA_sampler} and
 returns the raw benchmarks and average time per sampling step. Only works if the sampler was run with
 \code{benchmarks = TRUE}.
 }

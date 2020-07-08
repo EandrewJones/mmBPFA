@@ -34,15 +34,17 @@ namespace ibp {
     }
 }
 
-// Sampling step for Indian Buffet Process Alpha Parameter
-//
-// @param ibp_b A scalar double, Indian Buffet Process beta parameter.
-// @param zeros A binary, sparsity inducing matrix of dimenion P x K.
-// @param e A scalar double, tunable hyperparameter for the shape parameter of the gamma draw. Default is 1.
-// @param f A scalar double, tunable hyperparameter for the rate parameter of the gamma draw. Default is 1.
-//
-// @return ibp_a Scalar double, Indian Buffet Process alpha parameter.
-//
+//' Sampling step for Indian Buffet Process Alpha Parameter
+//'
+//' @keywords internal
+//'
+//' @param ibp_b A scalar double, Indian Buffet Process beta parameter.
+//' @param zeros A binary, sparsity inducing matrix of dimenion P x K.
+//' @param e A scalar double, tunable hyperparameter for the shape parameter of the gamma draw. Default is 1.
+//' @param f A scalar double, tunable hyperparameter for the rate parameter of the gamma draw. Default is 1.
+//'
+//' @return ibp_a Scalar double, Indian Buffet Process alpha parameter.
+//'
 // [[Rcpp::export(name = "sample_IBP_a")]]
 double sample_IBP_a(
     const double ibp_b,
@@ -61,13 +63,14 @@ double sample_IBP_a(
 
 //' Metropolis-Hastings sampling step for Indian Buffet Process Beta Parameter
 //'
+//' @keywords internal
+//'
 //' @param ibp_a A scalar double, Indian Buffet Process alpha parameter.
 //' @param ibp_b A scalar double, prior Indian Buffet Process Beta parameter .
 //' @param zeros A binary, sparsity inducing matrix of dimenion P x K.
 //'
 //' @return ibp_b Scalar double, Indian Buffet Process beta parameter.
 //'
-// [[Rcpp::interfaces(r, cpp)]]
 // [[Rcpp::export(name = "sample_IBP_b")]]
 double sample_IBP_b(
     const double ibp_a,

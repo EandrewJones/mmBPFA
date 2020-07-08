@@ -17,15 +17,17 @@ namespace local {
 }
 
 
-// Sampling step for gamma_k (factor precisions)
-//
-// @param zeros A binary, sparsity inducing matrix of dimenion P x K.
-// @param lambda A standard multivariate normal matrix of factor loadings of dimension P x K.
-// @param c A tunable hyperparameter for the shape parameter of the gamma draw. Default is 0.
-// @param d A tunable hyperparameter for the inverse-scale (rate) parameter of the gamma draw. Default is 100
-//
-// @return gamma_k Numeric vector of factor precisions of length K.
-//
+//' Sampling step for gamma_k (factor precisions)
+//'
+//' @keywords internal
+//'
+//' @param zeros A binary, sparsity inducing matrix of dimenion P x K.
+//' @param lambda A standard multivariate normal matrix of factor loadings of dimension P x K.
+//' @param c A tunable hyperparameter for the shape parameter of the gamma draw. Default is 0.
+//' @param d A tunable hyperparameter for the inverse-scale (rate) parameter of the gamma draw. Default is 100
+//'
+//' @return gamma_k Numeric vector of factor precisions of length K.
+//'
 // [[Rcpp::export(name = "sample_gamma_k")]]
 arma::vec sample_gamma_k(
     const arma::mat& zeros,

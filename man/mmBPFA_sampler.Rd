@@ -42,10 +42,10 @@ mmBPFA_sampler(
 \item{benchmark}{Boolean indicating whether to return benchmark timings of each sampling step. Primarily used for development purposes if user wants to further optimize the sampler for improved runtime. Default is FALSE.}
 }
 \value{
-S3 object of class `bpfa.results` containing log-likelihoods, number of sampled dimensions at each step, and the posterior draws.
+S3 object of class \code{bpfa.results} containing log-likelihoods, number of sampled dimensions at each step, and the posterior draws.
 }
 \description{
-\code{mmBPFA_sampler} is the primary functional interface for the mmBPFA package. 
-The sampler estimates a latent posterior distribution from the data using a Gibbs sampling procedure. 
+\code{mmBPFA_sampler} is the primary functional interface for the mmBPFA package.
+The sampler estimates a latent posterior distribution from the data using a Gibbs sampling procedure.
 Each conditional sampling step is written in C++ for improved sampling speed.
 }

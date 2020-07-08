@@ -1,10 +1,11 @@
-# calculates the D subset (rank orderings mask), and number of levels and unique values per margin
-#
-# @param dat data matrix.
-# @param mode Margin type, must be one of "fixed", "multi" or "mixed".
-# 
-# @return List containing the D mask, number of unique values per margin, and unique margin values
-# 
+#' calculates the D subset (rank orderings mask), and number of levels and unique values per margin
+#'
+#' @keywords internal
+#' @param dat data matrix.
+#' @param mode Margin type, must be one of "fixed", "multi" or "mixed".
+#' 
+#' @return List containing the D mask, number of unique values per margin, and unique margin values
+#' 
 calculate_d_mask <- function(dat, mode) {
 
     # calculate D mask, margin cardinality, and unique margin values

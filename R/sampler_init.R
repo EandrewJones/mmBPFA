@@ -1,4 +1,13 @@
-# generate initial values for single chain
+#' generate initial values for single chain
+#' 
+#' @keywords internal
+#' 
+#' @param dat Data matrix.
+#' @param mode Margin type.
+#' @param n_levels Numeric vector of number of unique values per margin.
+#' @param margin_vals Numeric vector or list of unique values per margin.
+#' @param K_start Number of latent dimensions to intialize sampler with. Default is 100.
+#' 
 initialize_sampler <- function(
     dat,
     mode,

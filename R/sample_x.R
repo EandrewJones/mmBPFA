@@ -1,17 +1,19 @@
-# sample X values according to Hoff (2007) and Murray et al. (2013) extended rank likelihood approach
-# 
-# @param dat Data matrix.
-# @param mode Margin type. Must be one of "fixed", "mixed" or "multi."
-# @param d_mask Boolean mask of extended rank likelihood.
-# @param n_levels Numeric vector of number of unique values per margin.
-# @param margin_vals List of unique values per margin.
-# @param x N x P Gaussian copula matrix.
-# @param lambda P x K matrix of factor loadings.
-# @param alpha A numeric vector of item-level intercepts.
-# @param omega N x K matrix of factor scores.
-# 
-# @return List of x matrix and cutpoints.
-# 
+#' sample X values according to Hoff (2007) and Murray et al. (2013) extended rank likelihood approach
+#'
+#' @keywords internal
+#'
+#' @param dat Data matrix.
+#' @param mode Margin type. Must be one of "fixed", "mixed" or "multi."
+#' @param d_mask Boolean mask of extended rank likelihood.
+#' @param n_levels Numeric vector of number of unique values per margin.
+#' @param margin_vals List of unique values per margin.
+#' @param x N x P Gaussian copula matrix.
+#' @param lambda P x K matrix of factor loadings.
+#' @param alpha A numeric vector of item-level intercepts.
+#' @param omega N x K matrix of factor scores.
+#' 
+#' @return List of x matrix and cutpoints.
+#' 
 sample_x <- function(
     dat,
     mode,

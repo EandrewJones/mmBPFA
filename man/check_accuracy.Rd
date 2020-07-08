@@ -21,9 +21,9 @@ check_accuracy(dat, results, true_vals = NULL, mode, confusion = T)
 List of observed accuracy and accuracy metrics (rmse and mae). If confusion is TRUE, also returns confusion matrix results.
 }
 \description{
-\code{check_accuracy} ingests the cleaned results from \code{process_results} without standard errors and 
-returns the accuracy in reconstructing the observed data. If \code{true_vals} from \code{generate_sim_data} 
-is supplied, the function will also return the RMSE and MAE of posterior predictions for the latent values. 
+\code{check_accuracy} ingests the cleaned results from \code{process_results} without standard errors and
+returns the accuracy in reconstructing the observed data. If \code{true_vals} from \code{generate_sim_data}
+is supplied, the function will also return the RMSE and MAE of posterior predictions for the latent values.
 A confusion matrix, precision, recall, and Kappa score are also available via \code{confusion = TRUE} for data
 with fixed marginal distributions.
 }

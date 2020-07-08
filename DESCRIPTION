@@ -16,8 +16,11 @@ Description: A semi-parametric, multidimensional Bayesian factor analysis for mu
              scaling (item-response theory), and missing data imputation. The sampler is
              implemented in C++ for improved speed and includes post-processing functions
              that are amenable to a tidy workflow.
-License: GPL (>= 2)
-Depends: R (>= 3.5.0)
+License: MIT + file LICENSE
+URL: https://github.com/EandrewJones/mmBPFA
+BugReports: https://github.com/EandrewJones/mmBPFA/issues
+Depends: 
+    R (>= 3.5.0)
 Imports:
     abind (>= 1.4-5),
     mvtnorm (>= 1.1-0),
@@ -30,5 +33,15 @@ Imports:
     truncnorm,
     utils,
     zeallot (>= 0.1.0)
-LinkingTo: Rcpp, RcppArmadillo
+Suggests:
+    knitr,
+    rmarkdown
+LinkingTo: 
+    Rcpp, 
+    RcppArmadillo
+VignetteBuilder:
+    knitr
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.0

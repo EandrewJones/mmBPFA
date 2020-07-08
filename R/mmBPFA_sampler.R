@@ -106,8 +106,12 @@ mmBPFA_sampler <- function(
 }
 
 
-# An internal meta-function that packages the entire sampler into a 
-# single call used in the bpfa_binary interface function to clean up the chains.
+#' Meta-function that bundles the sampler into a chain call
+#' 
+#' Performs single chain run of the mmBPFA algorithm.
+#' 
+#' @keywords internal
+#' 
 chain_call <- function(
     pre_sparse,
     warmup,
@@ -303,8 +307,10 @@ chain_call <- function(
 }
 
 
-# All-in-one function for the sampling procedure in all
-# three phases of the algorithm (pre-sparse, warmup, main).
+#' All-in-one function for the sampling procedure 
+#' 
+#' @keywords internal
+#' 
 sampler_phase  <- function(
     phase,
     dat,

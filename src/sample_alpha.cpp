@@ -16,14 +16,16 @@ namespace alpha {
     }
 }
 
-// Sampling step for alpha (item-intercepts)
-//
-// @param x A multivariate Gaussian copula matrix of dimenion N x P.
-// @param lambda A standard multivariate normal matrix of factor loadings of dimension P x K.
-// @param omega A standard multivariate normal matrix of factor scores of dimenion N x K.
-//
-// @return alpha Numeric vector of item-intercepts of length P.
-//
+//' Sampling step for alpha (item-intercepts)
+//'
+//' @keywords internal
+//'
+//' @param x A multivariate Gaussian copula matrix of dimenion N x P.
+//' @param lambda A standard multivariate normal matrix of factor loadings of dimension P x K.
+//' @param omega A standard multivariate normal matrix of factor scores of dimenion N x K.
+//'
+//' @return alpha Numeric vector of item-intercepts of length P.
+//'
 // [[Rcpp::export(name = "sample_alpha")]]
 arma::vec sample_alpha(
     const arma::mat& x,

@@ -1,13 +1,15 @@
-# Remove inactive features
-# 
-# @param zeros P x K sparsity-inducing binary matrix.
-# @param lambda P x K matrix of factor loadings.
-# @param omega N x K matrix of factor scores.
-# @param gamma_k A numeric vector factor precisions of length K.
-# @param dc A numeric vector counting number of times each dimension has been sampled.
-# 
-# @return List of zeros, lambda, omega, gamma_k, dc.
-# 
+#' Remove inactive features
+#'
+#' @keywords internal
+#'   
+#' @param zeros P x K sparsity-inducing binary matrix.
+#' @param lambda P x K matrix of factor loadings.
+#' @param omega N x K matrix of factor scores.
+#' @param gamma_k A numeric vector factor precisions of length K.
+#' @param dc A numeric vector counting number of times each dimension has been sampled.
+#' 
+#' @return List of zeros, lambda, omega, gamma_k, dc.
+#' 
 remove_inactive <- function(
     zeros,
     lambda,

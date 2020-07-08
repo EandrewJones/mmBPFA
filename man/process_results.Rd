@@ -7,7 +7,7 @@
 process_results(mcmc_object, SE = T, p = c(0.05, 0.95), to_tibble = T)
 }
 \arguments{
-\item{mcmc_object}{An S3 object of class `bpfa.results` from mmBPFA sampling run.}
+\item{mcmc_object}{An S3 object of class \code{bpfa.results} from mmBPFA sampling run.}
 
 \item{SE}{A boolean indicating whether to calculate standard error credibility intervals around posterior estimates.}
 
@@ -16,7 +16,7 @@ process_results(mcmc_object, SE = T, p = c(0.05, 0.95), to_tibble = T)
 \item{to_tibble}{A boolean indicating whether to convert output to tibbles for use in tidy workflow. Default is TRUE.}
 }
 \value{
-An S3 object of class `mcmc.output.processed` containing the processed posterior margins.
+An S3 object of class \code{mcmc.output.processed} containing the processed posterior margins.
 }
 \description{
 \code{process_results} ingests raw results from \code{mmBPFA_sampler} and returns processed estimates of posterior quantities of interest.

@@ -1,11 +1,13 @@
-# calculate log-likelihood by integrating over the posterior distribution
-#
-# @param k_lambda stored lambda matrix from mcmc iteration.
-# @param k_omega stored omega matrix from mcmc iteration.
-# @param alpha stored alpha vector from mcmc iteration.
-# @param dat data matrix.
-# 
-# @return log-likelihood
+#' calculate log-likelihood by integrating over the posterior distribution
+#'
+#' @keywords internal
+#' 
+#' @param k_lambda stored lambda matrix from mcmc iteration.
+#' @param k_omega stored omega matrix from mcmc iteration.
+#' @param alpha stored alpha vector from mcmc iteration.
+#' @param dat data matrix.
+#' 
+#' @return log-likelihood
 calculate_log_lik <- function(k_lambda, k_omega, alpha, dat) {
     # get dimensions
     c(n, p) %<-% get_dims_2d(dat)

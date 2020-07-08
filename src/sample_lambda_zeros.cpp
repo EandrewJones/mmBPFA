@@ -2,25 +2,27 @@
 #include <RcppArmadillo.h>
 using namespace Rcpp;
 
-// Sampling step for lambda and binary, sparsity-inducing zero matrix
-//
-// @param x A multivariate Gaussian copula matrix of dimenion N x P.
-// @param lambda A standard multivariate normal matrix of factor loadings of dimension P x K.
-// @param zeros A binary, sparsity inducing matrix of dimenion P x K.
-// @param omega A standard multivariate normal matrix of factor scores of dimenion N x K.
-// @param alpha A numeric vector of item-intercepts of length P.
-// @param gamma_k A numeric vector of factor precisions of length K.
-// @param dc A integer vector of counts for the number of times each dimensions has been sampled.
-// @param ibp_a A scalar double, Indian Buffet Process beta parameter.
-// @param ibp_b A scalar double, Indian Buffet Process beta parameter.
-// @param tau A tunable hyperparameter for the poisson draws of new dishes to be sampled.
-// @param sparse A boolean indicating whether to include sparsity-inducing prior.
-// @param infinite A boolen indicating whether to sample new potential dishes at each step.
-//
-// @return zeros A binary, sparsity inducing matrix of dimenion P x K.
-// @return lambda A standard multivariate normal matrix of factor loadings of dimension P x K.
-// @return dc A integer vector of counts for the number of times each dimensions has been sampled.
-//
+//' Sampling step for lambda and binary, sparsity-inducing zero matrix
+//'
+//' @keywords internal
+//'
+//' @param x A multivariate Gaussian copula matrix of dimenion N x P.
+//' @param lambda A standard multivariate normal matrix of factor loadings of dimension P x K.
+//' @param zeros A binary, sparsity inducing matrix of dimenion P x K.
+//' @param omega A standard multivariate normal matrix of factor scores of dimenion N x K.
+//' @param alpha A numeric vector of item-intercepts of length P.
+//' @param gamma_k A numeric vector of factor precisions of length K.
+//' @param dc A integer vector of counts for the number of times each dimensions has been sampled.
+//' @param ibp_a A scalar double, Indian Buffet Process beta parameter.
+//' @param ibp_b A scalar double, Indian Buffet Process beta parameter.
+//' @param tau A tunable hyperparameter for the poisson draws of new dishes to be sampled.
+//' @param sparse A boolean indicating whether to include sparsity-inducing prior.
+//' @param infinite A boolen indicating whether to sample new potential dishes at each step.
+//'
+//' @return zeros A binary, sparsity inducing matrix of dimenion P x K.
+//' @return lambda A standard multivariate normal matrix of factor loadings of dimension P x K.
+//' @return dc A integer vector of counts for the number of times each dimensions has been sampled.
+//'
 // [[Rcpp::export(name = "sample_lambda_and_zeros")]]
 List sample_lambda_and_zeros(
     arma::mat x,

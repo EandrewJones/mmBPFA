@@ -29,14 +29,16 @@ namespace omega {
     }
 }
 
-// Sampling step for omega matrix (Factor Scores) of dimension N x K.
-//
-// @param lambda A standard multivariate normal matrix of factor loadings of dimension P x K.
-// @param x A multivariate Gaussian copula matrix of dimenion N x P.
-// @param alpha A numeric vector of item-intercepts of length P.
-//
-// @return omega A multivariate Gaussian matrix of factor scores of dimension N x K.
-//
+//' Sampling step for omega matrix (Factor Scores) of dimension N x K.
+//'
+//' @keywords internal
+//'
+//' @param lambda A standard multivariate normal matrix of factor loadings of dimension P x K.
+//' @param x A multivariate Gaussian copula matrix of dimenion N x P.
+//' @param alpha A numeric vector of item-intercepts of length P.
+//'
+//' @return omega A multivariate Gaussian matrix of factor scores of dimension N x K.
+//'
 // [[Rcpp::export(name = "sample_omega")]]
 arma::mat sample_omega(
     arma::mat lambda,
