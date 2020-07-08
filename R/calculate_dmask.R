@@ -14,8 +14,8 @@ calculate_d_mask <- function(dat, mode) {
         n_levels <- length(margin_vals)
         d_mask <- lapply(margin_vals, function(x) {
             list(
-                "lower" = as_tibble(dat < x, .name_repair = "minimal"),
-                "upper" = as_tibble(dat > x, .name_repair = "minimal")
+                "lower" = tibble::as_tibble(dat < x, .name_repair = "minimal"),
+                "upper" = tibble::as_tibble(dat > x, .name_repair = "minimal")
             )
         })
         d_mask <- list(
