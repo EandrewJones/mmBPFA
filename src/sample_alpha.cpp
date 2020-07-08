@@ -35,7 +35,6 @@ arma::vec sample_alpha(
         // get dimensions
         int n = x.n_rows;
         int p = x.n_cols;
-        int K = lambda.n_cols;
 
         // sample
         arma::mat pred_vals = trans(lambda * omega.t());

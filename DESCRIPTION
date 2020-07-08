@@ -22,9 +22,9 @@ BugReports: https://github.com/EandrewJones/mmBPFA/issues
 Depends: 
     R (>= 3.5.0)
 Imports:
-    abind (>= 1.4-5),
+    abind,
     dplyr,
-    mvtnorm (>= 1.1-0),
+    mvtnorm,
     purrr,
     Rcpp (>= 1.0.4.6),
     RcppArmadillo (>= 0.9.870.2.0),

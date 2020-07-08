@@ -48,7 +48,7 @@ List sample_lambda_and_zeros(
         alpha_mat.each_row() = alpha.t();
         arma::vec gam_ks(K);
         arma::rowvec mu_k(p);
-        double log_rp = 0, log_p1 = 0, p1 = 0, mu_jk = 0, lambda_jk = 0, zero_jk = 0;
+        double log_rp = 0, log_p1 = 0, p1 = 0, lambda_jk = 0, zero_jk = 0;
 
         // calculate gamma and colsums of sparsity matrix
         for (int k = 0; k < K; k++) {
