@@ -8,13 +8,13 @@
 #' @param n Number of observations. Default is 1000.
 #' @param p Number of features. Default is 500.
 #' @param K_true True number of latent dimensions. Default is 10.
-#' @param sparsity Numeric value between [0, 1] that determines amount of sparsity in the factor loadings. If sparsity argument is set, zeros are uniformly distributed across all dimensions. Default is NULL.
+#' @param sparsity Numeric value between 0 and 1 that determines amount of sparsity in the factor loadings. If sparsity argument is set, zeros are uniformly distributed across all dimensions. Default is NULL.
 #' @param a A hyperparameter determining the distribution of sparsity across the factor loadings. Default is 10
 #' @param b A hyperparameter determining the distribution of sparsity across the factor loadings. Default is 1.
 #' @param d A hyperparameter determining the shape of the factor precisions (gamma_k). Default is 2.
 #' @param e A hyperparameter determining the scale of the factor precisions (gamma_k). Default is 1.
-#' @param prop_missing Numeric value between [0, 1] determining the proportion of missingness in the data. Default is 0.
-#' @param noise Numeric value between [0, 1] determining how much noise should be induced into the data. Default is 0.05.
+#' @param prop_missing Numeric value between 0 and 1 determining the proportion of missingness in the data. Default is 0.
+#' @param noise Numeric value between 0 and 1 determining how much noise should be induced into the data. Default is 0.05.
 #' @param seed Random seed. Default is 123.
 #' 
 #' @return S3 object of class `mmBPFA.simulated.data` containing generated data and true underlying values. Attributes note the user-given arguments.
@@ -361,7 +361,8 @@ generate_sim_data <- function(
 }
 
 
-# zeallot destructure function
+#' zeallot destructure function
+#' @keywords internal
 destructure.mmBPFA.simulated.data <- function(x) {
     list(x$data, x$true_values)
 }

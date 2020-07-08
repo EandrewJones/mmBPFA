@@ -1,3 +1,10 @@
 ^.git$
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^README\.Rmd$
+^README-.*\.png$
+^docs$
+^LICENSE\.md$
+^\.github$
+^vignettes/.*_cache
+^pkgdown$

@@ -31,7 +31,7 @@ generate_sim_data(
 
 \item{K_true}{True number of latent dimensions. Default is 10.}
 
-\item{sparsity}{Numeric value between \link{0, 1} that determines amount of sparsity in the factor loadings. If sparsity argument is set, zeros are uniformly distributed across all dimensions. Default is NULL.}
+\item{sparsity}{Numeric value between 0 and 1 that determines amount of sparsity in the factor loadings. If sparsity argument is set, zeros are uniformly distributed across all dimensions. Default is NULL.}
 
 \item{a}{A hyperparameter determining the distribution of sparsity across the factor loadings. Default is 10}
 
@@ -41,9 +41,9 @@ generate_sim_data(
 
 \item{e}{A hyperparameter determining the scale of the factor precisions (gamma_k). Default is 1.}
 
-\item{prop_missing}{Numeric value between \link{0, 1} determining the proportion of missingness in the data. Default is 0.}
+\item{prop_missing}{Numeric value between 0 and 1 determining the proportion of missingness in the data. Default is 0.}
 
-\item{noise}{Numeric value between \link{0, 1} determining how much noise should be induced into the data. Default is 0.05.}
+\item{noise}{Numeric value between 0 and 1 determining how much noise should be induced into the data. Default is 0.05.}
 
 \item{seed}{Random seed. Default is 123.}
 }

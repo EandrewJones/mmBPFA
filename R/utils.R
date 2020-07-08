@@ -2,20 +2,23 @@
 `%nin%`  <- Negate(`%in%`)
 
 
-# log-beta draws
+#' Indian Buffet Process log-beta draws
+#' @keywords internal
 ibp_lbeta <- function(m_k, p, b) {
     return(lbeta(m_k, p - m_k + b))
 }
 
 
-# Ibp point process parameter function
+#' Indian Buffet point process parameter function
+#' @keywords internal
 Hpb <- function(b, p) {
     return(sum(b / (b + seq(1, p) - 1)))
 }
 Hpb  <- Vectorize(Hpb, "b")
 
 
-# function to get extract dimensions of 2d objects
+#' function to get extract dimensions of 2d objects
+#' @keywords internal
 get_dims_2d <- function(x, warn = FALSE) {
     d1 <- dim(x)[1]
     d2 <- dim(x)[2]
@@ -28,7 +31,8 @@ get_dims_2d <- function(x, warn = FALSE) {
 }
 
 
-# Selects appropriate K_start based on rank of data
+#' Selects appropriate K_start based on rank of data
+#' @keywords internal
 check_k_start <- function(K_start, p, n) {
     n_ks <- min(K_start, p, n)
     if (n_ks != K_start) {
@@ -39,7 +43,8 @@ check_k_start <- function(K_start, p, n) {
 }
 
 
-# vectorized which.max function for D mask
+#' vectorized which.max function for D mask
+#' @keywords internal
 vectorized_which.max <- Vectorize(
             function(x, y) {
                 which.max(x < y) - 1

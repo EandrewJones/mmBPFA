@@ -24,7 +24,7 @@ calculate_d_mask <- function(dat, mode) {
             purrr::map(d_mask, ~ .x[["upper"]])
             )
     } else { # for mixed margins
-        dat_tbl <- tibble:::as_tibble(dat, .name_repair = "minimal")
+        dat_tbl <- tibble::as_tibble(dat, .name_repair = "minimal")
         margin_vals <- purrr::map(dat_tbl, ~ sort(unique(.x)))
         n_levels <- purrr::map_int(margin_vals, length)
         d_mask <- purrr::map2(

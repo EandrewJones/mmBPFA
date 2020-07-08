@@ -30,6 +30,18 @@ sample_gamma_k <- function(zeros, lambda, c = 0, d = 100) {
     .Call(`_mmBPFA_sample_gamma_k`, zeros, lambda, c, d)
 }
 
+#' Sampling step for d (hyperparameter for sample_gamma_k)
+#'
+#' @keywords internal
+#'
+#' @param zeros A binary, sparsity inducing matrix of dimenion P x K.
+#' @param gamma_k A gamma-distributed vector of factor precisions of length K.
+#' @param c A tunable hyperparameter for the shape parameter of the gamma draw. Default is 1.
+#' @param c0 A tunable hyperparameter for the shape parameter of the gamma draw.
+#' @param d0 A tunable hyperparameter for the inverse-scale (rate) parameter of the gamma draw.
+#'
+#' @return scalar double
+#'
 sample_d <- function(zeros, gamma_k, c, c0, d0) {
     .Call(`_mmBPFA_sample_d`, zeros, gamma_k, c, c0, d0)
 }

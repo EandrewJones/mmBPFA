@@ -53,16 +53,18 @@ arma::vec sample_gamma_k(
         return gamma_k_out;
 }
 
-// Sampling step for d (hyperparameter for sample_gamma_k)
-//
-// @param zeros A binary, sparsity inducing matrix of dimenion P x K.
-// @param gamma_k A gamma-distributed vector of factor precisions of length K.
-// @param c A tunable hyperparameter for the shape parameter of the gamma draw. Default is 1.
-// @param c0 A tunable hyperparameter for the shape parameter of the gamma draw.
-// @param d0 A tunable hyperparameter for the inverse-scale (rate) parameter of the gamma draw.
-//
-// @return scalar double
-//
+//' Sampling step for d (hyperparameter for sample_gamma_k)
+//'
+//' @keywords internal
+//'
+//' @param zeros A binary, sparsity inducing matrix of dimenion P x K.
+//' @param gamma_k A gamma-distributed vector of factor precisions of length K.
+//' @param c A tunable hyperparameter for the shape parameter of the gamma draw. Default is 1.
+//' @param c0 A tunable hyperparameter for the shape parameter of the gamma draw.
+//' @param d0 A tunable hyperparameter for the inverse-scale (rate) parameter of the gamma draw.
+//'
+//' @return scalar double
+//'
 // [[Rcpp::export(name = "sample_d")]]
 double sample_d(
     const arma::mat& zeros,
