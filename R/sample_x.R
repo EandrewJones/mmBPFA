@@ -31,7 +31,7 @@ sample_x <- function(
     pred_mat <- t(lambda %*% t(omega)) - alpha_mat
 
     # convert inputs to tibbles for mapping
-    c(x_tbl, dat_tbl, pred_mat_tbl) %<-% map(
+    c(x_tbl, dat_tbl, pred_mat_tbl) %<-% purrr::map(
         list(x, dat, pred_mat),
         tibble::as_tibble,
         .name_repair = "minimal"
@@ -45,32 +45,32 @@ sample_x <- function(
     # where entire x matrix can be draw in single step for each level
     if (mode == "fixed") {
         # get lower cutpoints
-        margin_bounds_l <- map(
+        margin_bounds_l <- purrr::map(
             d_mask_l,
-            ~ map2_dbl(
+            ~ purrr::map2_dbl(
                 x_tbl, .x,
                 function(x, y) max(x[y], na.rm = TRUE)
                 )
             )
         # upper cutpoints
-        margin_bounds_u <- map(
+        margin_bounds_u <- purrr::map(
             d_mask_u,
-            ~ map2_dbl(
+            ~ purrr::map2_dbl(
                 x_tbl, .x,
                 function(x, y) min(x[y], na.rm = TRUE)
             )
         )
         # combine into single list
-        boundary_lists <- map2(
+        boundary_lists <- purrr::map2(
             margin_bounds_l, margin_bounds_u,
             ~ list("a" = .x, "b" = .y)
         )
 
         # Draw samples for observed margins
-        samples <- map2(
+        samples <- purrr::map2(
             boundary_lists, margin_vals,
             function(bounds, vals) {
-                c(a, b) %<-% map(bounds, rep, each = n)
+                c(a, b) %<-% purrr::map(bounds, rep, each = n)
                 draws <- matrix(
                     nrow = n,
                     ncol = p,
@@ -86,7 +86,7 @@ sample_x <- function(
                 draws <- ((dat == vals) & (is.na(dat) == FALSE)) * draws
 
                 # filter cutpoints by mask
-                c(mat_a, mat_b) %<-% map(
+                c(mat_a, mat_b) %<-% purrr::map(
                     list(a, b),
                     function(x) {
                         x <- ((dat == vals) & (is.na(dat) == FALSE)) * x
@@ -103,9 +103,9 @@ sample_x <- function(
                 return(output_list)
             }
         )
-        draws <- map(samples, ~ .x[["draws"]])
-        mat_a <- map(samples, ~ .x[["mat_a"]])
-        mat_b <- map(samples, ~ .x[["mat_b"]])
+        draws <- purrr::map(samples, ~ .x[["draws"]])
+        mat_a <- purrr::map(samples, ~ .x[["mat_a"]])
+        mat_b <- purrr::map(samples, ~ .x[["mat_b"]])
         mat_a <- Reduce('+', mat_a)
         mat_b <- Reduce('+', mat_b)
 
@@ -134,11 +134,11 @@ sample_x <- function(
     } else { # multimodal margins
 
         # get lower cutpoints
-        margin_bounds_l <- map2(
+        margin_bounds_l <- purrr::map2(
             x_tbl,
             d_mask_l,
             function(x, y) {
-                l_bounds <- map_dbl(
+                l_bounds <- purrr::map_dbl(
                     y,
                     function(y) max(x[y], na.rm = T)
                 )
@@ -146,11 +146,11 @@ sample_x <- function(
             }
         )
         # get upper cutpoints
-        margin_bounds_u <- map2(
+        margin_bounds_u <- purrr::map2(
             x_tbl,
             d_mask_u,
             function(x, y) {
-                u_bounds <- map_dbl(
+                u_bounds <- purrr::map_dbl(
                     y,
                     function(y) min(x[y], na.rm = T)
                 )
@@ -158,13 +158,13 @@ sample_x <- function(
             }
         )
         # combine into single list
-        boundary_lists <- map2(
+        boundary_lists <- purrr::map2(
             margin_bounds_l, margin_bounds_u,
             ~ list('a' = .x, 'b' = .y)
         )
 
         # draw samples for observed data
-        samples <- pmap(
+        samples <- purrr::pmap(
             list(n_levels, boundary_lists, pred_mat_tbl, dat_tbl, margin_vals),
             function(n_levels, cutpoints, pred_mat, dat, margin_vals) {
                 c(a, b) %<-% cutpoints
@@ -197,7 +197,7 @@ sample_x <- function(
                     )
                     mat_b[[c_k]][which(is.nan(mat_b[[c_k]]))] <- 0
                 }
-                c(draws, mat_a, mat_b) %<-% map(
+                c(draws, mat_a, mat_b) %<-% purrr::map(
                     list(draws, mat_a, mat_b),
                     ~ Reduce("+", .x)
                 )
@@ -210,12 +210,12 @@ sample_x <- function(
                 return(output_list)
             }
         )
-        draws <- map(samples, ~ .x[["draws"]])
-        mat_a <- map(samples, ~ .x[["mat_a"]])
-        mat_b <- map(samples, ~ .x[["mat_b"]])
+        draws <- purrr::map(samples, ~ .x[["draws"]])
+        mat_a <- purrr::map(samples, ~ .x[["mat_a"]])
+        mat_b <- purrr::map(samples, ~ .x[["mat_b"]])
 
         # collapse col-wise draws into matrix
-        c(x_out, mat_a, mat_b) %<-% map(
+        c(x_out, mat_a, mat_b) %<-% purrr::map(
             list(draws, mat_a, mat_b),
             ~ do.call(cbind, .x)
         )

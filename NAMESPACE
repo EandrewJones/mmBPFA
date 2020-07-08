@@ -1,5 +1,6 @@
 useDynLib(mmBPFA, .registration=TRUE)
 import(abind)
+import(dplyr)
 import(graphics)
 import(mvtnorm)
 import(purrr)

@@ -19,17 +19,17 @@ calculate_d_mask <- function(dat, mode) {
             )
         })
         d_mask <- list(
-            map(d_mask, ~ .x[["lower"]]),
-            map(d_mask, ~ .x[["upper"]])
+            purrr::map(d_mask, ~ .x[["lower"]]),
+            purrr::map(d_mask, ~ .x[["upper"]])
             )
     } else { # for mixed margins
         dat_tbl <- tibble:::as_tibble(dat, .name_repair = "minimal")
-        margin_vals <- map(dat_tbl, ~ sort(unique(.x)))
-        n_levels <- map_int(margin_vals, length)
-        d_mask <- map2(
+        margin_vals <- purrr::map(dat_tbl, ~ sort(unique(.x)))
+        n_levels <- purrr::map_int(margin_vals, length)
+        d_mask <- purrr::map2(
             margin_vals,
             dat_tbl,
-            ~ map(
+            ~ purrr::map(
                 .x,
                 function(x) {
                     list(
@@ -40,8 +40,8 @@ calculate_d_mask <- function(dat, mode) {
             )
         )
         d_mask <- list(
-            map_depth(d_mask, 2, ~ .x[["lower"]]),
-            map_depth(d_mask, 2, ~ .x[["upper"]])
+            purrr::map_depth(d_mask, 2, ~ .x[["lower"]]),
+            purrr::map_depth(d_mask, 2, ~ .x[["upper"]])
         )
     }
 

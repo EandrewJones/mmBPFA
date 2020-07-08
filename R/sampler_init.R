@@ -74,7 +74,7 @@ initialize_sampler <- function(
     } else {
         # sample draws for mixed margins
         # uniform cutpoints by margin
-        cutpoints <- map(n_levels, function(x) seq(0, 1, 1 / x))
+        cutpoints <- purrr::map(n_levels, function(x) seq(0, 1, 1 / x))
         tnorm_cutpoints <- lapply(cutpoints, qnorm)
 
         # convert data and means to tibbles for mapping
@@ -82,7 +82,7 @@ initialize_sampler <- function(
         pred_mat_tbl <- tibble::as_tibble(pred_mat, .name_repair = "minimal")
 
         # draws from truncated normals for observed data
-        draws <- pmap(
+        draws <- purrr::pmap(
             list(n_levels, tnorm_cutpoints, pred_mat_tbl, dat_tbl, margin_vals),
             function(n_levels, cutpoints, pred_mat, dat, margin_vals) {
                 draws <- list()

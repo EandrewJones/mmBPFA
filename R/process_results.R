@@ -51,7 +51,7 @@ process_results <- function(
     c(zeros, lambda, omega, alpha, gamma_k, cutpoints) %<-% results
 
     # 1) zeros
-    zero_csums_array <- t(abind(map(zeros, ~ .x[, 1:stable_K] %>% colSums()), along = 2))
+    zero_csums_array <- t(abind::abind(map(zeros, ~ .x[, 1:stable_K] %>% colSums()), along = 2))
     zero_csums_mean <- colMeans(zero_csums_array)
     dim_order <- rev(order(zero_csums_mean))
 
@@ -113,22 +113,22 @@ process_results <- function(
     }
 
     # 5) process cutpoints
-    c(a_mean, b_mean) %<-% map(
+    c(a_mean, b_mean) %<-% purrr::map(
         c("a", "b"),
         function(x) {
-            cutpoint_array <- abind(map(cutpoints, ~ .x[[x]]), along = 3)
+            cutpoint_array <- abind::abind(purrr::map(cutpoints, ~ .x[[x]]), along = 3)
             cutpoint_mean <- apply(cutpoint_array, 1:2, mean, simplify = FALSE)
             cutpoint_mean <- apply(cutpoint_mean, 2, unique)
             if (mode == "multi") {
                 cutpoint_mean
             } else {
-                as_tibble(cutpoint_mean, .name_repair = "minimal")
+                tibble::as_tibble(cutpoint_mean, .name_repair = "minimal")
             }
         }
     )
-    a_sort <- map(a_mean, ~ sort(.x)[-1])
-    b_sort <- map(b_mean, ~ sort(.x)[-length(.x)])
-    cutpoints <- map2(a_sort, b_sort, ~ c(colMeans(rbind(.x, .y)), Inf))
+    a_sort <- purrr::map(a_mean, ~ sort(.x)[-1])
+    b_sort <- purrr::map(b_mean, ~ sort(.x)[-length(.x)])
+    cutpoints <- purrr::map2(a_sort, b_sort, ~ c(colMeans(rbind(.x, .y)), Inf))
 
     # store outputs
     output_list <- list()
@@ -182,45 +182,45 @@ process_benchmarks <- function(mcmc_object) {
 
     # reshape raw benchmarks
     raw_times_out <- benchmarks %>%
-        bind_rows(.id = "phase") %>%
-        unnest(time) %>%
-        mutate(
-            time = map(time, ~ .x %>%
+        dplyr::bind_rows(.id = "phase") %>%
+        tidyr::unnest(time) %>%
+        dplyr::mutate(
+            time = purrr::map(time, ~ .x %>%
             unlist() %>%
             t() %>%
-            as_tibble(.name_repair = "minimal")),
+            tibble::as_tibble(.name_repair = "minimal")),
             phase = factor(phase, levels = c("pre_sparse", "warmup", "mcmc"))
         ) %>%
-        unnest(time) %>%
-        mutate_at(
-            .vars = vars(tic.elapsed, toc.elapsed),
+        tidyr::unnest(time) %>%
+        dplyr::mutate_at(
+            .vars = dplyr::vars(tic.elapsed, toc.elapsed),
             .funs = as.numeric
         ) %>%
-        mutate(
+        dplyr::mutate(
             time = toc.elapsed - tic.elapsed,
         ) %>%
-        group_by(
+        dplyr::group_by(
             phase
         ) %>%
-        mutate(
+        dplyr::mutate(
             phase_iter = rep(1:(n() / 6), each = 6)
         ) %>%
-        ungroup() %>%
-        select(
+        dplyr::ungroup() %>%
+        dplyr::select(
             phase, phase_iter, sample_step = msg, time
         ) %>%
-        pivot_wider(
+        tidyr::pivot_wider(
             names_from = sample_step,
             values_from = time
         ) %>%
-        rowid_to_column(
+        tibble::rowid_to_column(
             "iter"
         )
 
     # calculate average times
     avg_times_out <- raw_times_out %>%
-        group_by(phase) %>%
-        summarize_at(
+        dplyr::group_by(phase) %>%
+        dplyr::summarize_at(
             .vars = vars(3:8),
             .funs = mean
         )
@@ -332,23 +332,23 @@ check_accuracy <- function(
 
     # calculate X
     x <- t(lambda %*% t(omega)) - alpha_mat
-    x_tbl <- as_tibble(x, .name_repair = "minimal")
+    x_tbl <- tibble::as_tibble(x, .name_repair = "minimal")
 
     # predict y
     cutpoints <- results[["Cutpoints"]]
     c(..., n_levels, margin_vals) %<-% calculate_d_mask(dat = dat, mode = mode)
     if (mode == "fixed") {
-        preds <- pmap_dfr(
+        preds <- purrr::pmap_dfr(
             list(x_tbl, cutpoints),
             function(x, y) {
-                map_dbl(x, ~ margin_vals[which.max(.x < y)])
+                purrr::map_dbl(x, ~ margin_vals[which.max(.x < y)])
             }
         )
     } else {
-        preds <- pmap_dfr(
+        preds <- purrr::pmap_dfr(
             list(x_tbl, margin_vals, cutpoints),
             function(x, y, z) {
-                map_dbl(x, ~ y[which.max(.x < z)])
+                purrr::map_dbl(x, ~ y[which.max(.x < z)])
             }
     )
     }
@@ -391,15 +391,15 @@ check_accuracy <- function(
         true_gamma_k <- true_gamma_k[1:K]
 
         # calculate metrics
-        rmse_mae_results <- tibble:::tibble(
+        rmse_mae_results <- tibble::tibble(
             "parameters" = c("x", "lambda", "omega", "alpha", "gamma_k"),
             "actual" = list(true_x, true_lambda, true_omega, true_alpha, true_gamma_k),
             "predicted" = list(x, lambda, omega, alpha, gamma_k)
         )
         rmse_mae_results <- rmse_mae_results %>%
-            mutate(results = map2(actual, predicted, ~ rmse_mae(.x, .y))) %>%
-            unnest_wider(results) %>%
-            select(parameters, rmse, mae)
+            dplyr::mutate(results = purrr::map2(actual, predicted, ~ rmse_mae(.x, .y))) %>%
+            tidyr::unnest_wider(results) %>%
+            dplyr::select(parameters, rmse, mae)
         output_list[["Accuracy Metrics"]] <- rmse_mae_results
     }
 
@@ -454,7 +454,7 @@ extract_omega_lambda_mean_se <- function(
     to_tibble = TRUE
     ) {
     # reshape samples
-    x_array <- abind(map(x, ~ .x[, 1:stable_K]), along = 3)
+    x_array <- abind::abind(purrr::map(x, ~ .x[, 1:stable_K]), along = 3)
     x_array <- x_array[, dim_order, ]
     x_mean <- apply(x_array, 1:2, mean, simplify = F)
 
@@ -474,7 +474,7 @@ extract_omega_lambda_mean_se <- function(
         )
         names(x_out) <- c("mean", paste0("ci_", p[1]), paste0("ci_", p[2]))
         x_out$dimension <- rep(1:stable_K, each = nrow(x_mean))
-        x_out <- select(x_out, dimension, everything())
+        x_out <- dplyr::select(x_out, dimension, dplyr::everything())
     }
 
     # add row (feature or observation) numbers and round
@@ -484,7 +484,7 @@ extract_omega_lambda_mean_se <- function(
         x_out$row <- 1:nrow(x_out)
     }
 
-    x_out <- select(x_out, row, everything())
+    x_out <- dplyr::select(x_out, row, dplyr::everything())
     x_out <- round(x_out, 7)
 
     if (!to_tibble) {

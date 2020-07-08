@@ -134,7 +134,7 @@ generate_sim_data <- function(
                 uniform_margins,
                 vectorized_which.max,
                 y = cutpoints) %>%
-                bind_cols() %>%
+                dplyr::bind_cols() %>%
                 as.matrix()
             colnames(y) <- NULL
 
@@ -156,16 +156,16 @@ generate_sim_data <- function(
             # generate a sequence of cutpoints based on number feature
             # levels per column
             cutpoints <- lapply(feature_levels, function(x) seq(0, 1, 1 / x)[-1])
-            y <- map2(
+            y <- purrr::map2(
                 uniform_margins,
                 cutpoints,
                 vectorized_which.max) %>%
-                map2(
+                purrr::map2(
                     .,
                     feature_levels,
                     ~ .x - ((.y - 1) / 2)
                 ) %>%
-                bind_cols() %>%
+                dplyr::bind_cols() %>%
                 as.matrix()
             colnames(y) <- NULL
         }
@@ -225,16 +225,16 @@ generate_sim_data <- function(
             margins <- list("p" = copula)
 
             # make draws
-            margin_draws <- lift_dl(f)(c(margins, args))
+            margin_draws <- purrr::lift_dl(f)(c(margins, args))
             return(margin_draws)
         }
 
         # make draws
-        y <- map2(
+        y <- purrr::map2(
             margin_dists,
             uniform_margins,
             ~ margin_draws(.x, .y)) %>%
-            bind_cols() %>%
+            dplyr::bind_cols() %>%
             as.matrix()
         colnames(y) <- NULL
     }
@@ -291,11 +291,11 @@ generate_sim_data <- function(
                 n <- list("n" = n_draws)
 
                 # make draws
-                margin_noise_draws <- lift_dl(f)(c(n, args))
+                margin_noise_draws <- purrr::lift_dl(f)(c(n, args))
                 return(margin_noise_draws)
             }
 
-            noise_samples <- map2(
+            noise_samples <- purrr::map2(
                 margin_dists_noise,
                 n_draws,
                 ~ margin_noise_draws(.x, .y)

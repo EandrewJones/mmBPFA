@@ -119,13 +119,13 @@ chain_call <- function(
     d_mask,
     n_levels,
     margin_vals,
-    x = x,
+    x,
     lambda,
     zeros,
     omega,
     alpha,
     gamma_k,
-    d = d,
+    d,
     dc,
     ibp_a,
     ibp_b,
@@ -136,7 +136,7 @@ chain_call <- function(
     # ================ #
     # initialize progress bar
     print(paste("Beginning pre-Beta process phase. Will run for", pre_sparse, "steps."))
-    pb <- txtProgressBar(min = 0, max = pre_sparse, style = 3)
+    pb <- utils::txtProgressBar(min = 0, max = pre_sparse, style = 3)
 
     # initialize benchmark container
     if (benchmark) pre_time_log <- tibble::tibble("time" = list(NA), .rows = pre_sparse)
@@ -164,7 +164,7 @@ chain_call <- function(
             benchmark = benchmark
         )
         # update progress bar
-        setTxtProgressBar(pb, step)
+        utils::setTxtProgressBar(pb, step)
 
         # update log
         if (benchmark) pre_time_log$time[[step]] <- time_log
@@ -176,7 +176,7 @@ chain_call <- function(
     # ============= #
     # initialize new progress bar
     print(paste("Beginning warmup phase. Will run for", warmup, "steps."))
-    pb <- txtProgressBar(min = 0, max = warmup, style = 3)
+    pb <- utils::txtProgressBar(min = 0, max = warmup, style = 3)
 
     # initialize benchmark container
     if (benchmark) warmup_time_log <- tibble::tibble("time" = list(NA), .rows = warmup)
@@ -204,7 +204,7 @@ chain_call <- function(
             benchmark = benchmark
             )
         # update progress bar
-        setTxtProgressBar(pb, step)
+        utils::setTxtProgressBar(pb, step)
 
         # update log
         if (benchmark) warmup_time_log$time[[step]] <- time_log
@@ -229,7 +229,7 @@ chain_call <- function(
 
     # initialize new progress bar
     print(paste("Beginning main sampling phase. Will run for", iter, "steps."))
-    pb <- txtProgressBar(min = 0, max = iter, style = 3)
+    pb <- utils::txtProgressBar(min = 0, max = iter, style = 3)
     print_k <- floor(iter / 70)
 
     # initialize benchmark container
@@ -276,7 +276,7 @@ chain_call <- function(
 
         # update progress bar
         if (step %% print_k == 0) cat("\rNumber of active factors: ", n_active_dims)
-        setTxtProgressBar(pb, step)
+        utils::setTxtProgressBar(pb, step)
 
         # update log
         if (benchmark) mcmc_time_log$time[[step]] <- time_log
