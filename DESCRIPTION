@@ -1,0 +1,34 @@
+Package: mmBPFA
+Type: Package
+Title: Multi-Modal Beta-Process Factor Analysis
+Version: 1.0
+Date: 2020-07-07
+Author: Evan Jones [aut, cre]
+Maintainer: Evan Jones <evan.a.jones3@gmail.com>
+Description: A semi-parametric, multidimensional Bayesian factor analysis for multimodal data.
+             By combining a beta-process prior (Knowles and Ghahramani 2011) on the factor loadings matrix
+             and treating the observed margins as arbitrary manifestations of a latent Gaussian copula (Murray et al. 2013),
+             this package allows the user to perform a factor analysis on data with any
+             combination of marginal distributions (continuous, discrete, or both)
+             without first specifying the dimensionality (K) of the data. The
+             non-parametric prior automatically learns the true dimensionality.
+             Potential applications include traditionaldimension reduction, multidimensional
+             scaling (item-response theory), and missing data imputation. The sampler is
+             implemented in C++ for improved speed and includes post-processing functions
+             that are amenable to a tidy workflow.
+License: GPL (>= 2)
+Depends: R (>= 3.5.0)
+Imports:
+    abind (>= 1.4-5),
+    mvtnorm (>= 1.1-0),
+    purrr,
+    Rcpp (>= 1.0.4.6),
+    RcppArmadillo (>= 0.9.870.2.0),
+    tibble,
+    tictoc,
+    tidyverse (>= 1.3.0),
+    truncnorm,
+    utils,
+    zeallot (>= 0.1.0)
+LinkingTo: Rcpp, RcppArmadillo
+RoxygenNote: 7.1.0

@@ -1,0 +1,9 @@
+useDynLib(mmBPFA, .registration=TRUE)
+importFrom(Rcpp, evalCpp)
+importFrom("graphics", "abline")
+importFrom("stats", "density", "median", "pnorm", "qbinom", "qnorm",
+             "quantile", "rbeta", "rbinom", "rgamma", "rnorm", "rpois",
+             "runif", "time")
+importFrom("utils", "setTxtProgressBar", "txtProgressBar")
+importFrom("zeallot", "%<-%")
+exportPattern("^[[:alpha:]]+")
