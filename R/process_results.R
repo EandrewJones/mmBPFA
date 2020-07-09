@@ -21,10 +21,16 @@ process_results <- function(
     if (class(mcmc_object) != "bpfa.results") stop("mcmc_object must be the output of bpfa sampling run.")
 
     # extract results
-    n_dims <- mcmc_object[[1]]
-    log_liks <- mcmc_object[[2]]
-    results <- mcmc_object[[3]]
-
+    if (attributes(mcmc_object)$parallel) {
+        n_dims <- do.call(c, purrr::map(mcmc_object, ~ .x[[1]]))
+        log_liks <- do.call(c, purrr::map(mcmc_object, ~ .x[[2]]))
+        results <- do.call(rbind, purrr::map(mcmc_object, ~ .x[[3]]))
+    } else {
+        n_dims <- mcmc_object[[1]]
+        log_liks <- mcmc_object[[2]]
+        results <- mcmc_object[[3]]
+    }
+    
     # get mode
     mode <- attributes(mcmc_object)$mode
 
@@ -51,7 +57,7 @@ process_results <- function(
     c(zeros, lambda, omega, alpha, gamma_k, cutpoints) %<-% results
 
     # 1) zeros
-    zero_csums_array <- t(abind::abind(map(zeros, ~ .x[, 1:stable_K] %>% colSums()), along = 2))
+    zero_csums_array <- t(abind::abind(purrr::map(zeros, ~ .x[, 1:stable_K] %>% colSums()), along = 2))
     zero_csums_mean <- colMeans(zero_csums_array)
     dim_order <- rev(order(zero_csums_mean))
 
@@ -93,7 +99,7 @@ process_results <- function(
     }
 
     # 4) process gamma_k
-    gamma_k_mat <- do.call(cbind, map(gamma_k, ~ .x[1:stable_K]))
+    gamma_k_mat <- do.call(cbind, purrr::map(gamma_k, ~ .x[1:stable_K]))
     gamma_k_mat <- gamma_k_mat[dim_order, ]
     gamma_k_mean <- rowMeans(gamma_k_mat)
     gamma_k_out <- round(gamma_k_mean, 7)

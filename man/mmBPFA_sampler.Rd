@@ -14,6 +14,8 @@ mmBPFA_sampler(
   iter = 5000,
   thin = 5,
   chains = 1,
+  parallel = TRUE,
+  n_cores = 1,
   seed = 101473,
   benchmark = FALSE
 )
@@ -36,6 +38,10 @@ mmBPFA_sampler(
 \item{thin}{Indicates how often posterior draws should be stored. Simulations suggest autocorrelation is present up to 5 lags, but tapers off at around 3. Defaults to 5 to minimize autocorrelation.}
 
 \item{chains}{Number of chains to run. Implementation currently only allows for a single chain. Default is 1.}
+
+\item{parallel}{Boolean indicating whether to use parallel processing for multiple chain runs.}
+
+\item{n_cores}{Number of cores to use for parallel chain runs.}
 
 \item{seed}{Random seed.}
 

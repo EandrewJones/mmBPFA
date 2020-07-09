@@ -13,6 +13,8 @@
 #' @param iter Number of posterior draws. 1000 draws usually suffices if runtime is an issue. Default is 5000.
 #' @param thin Indicates how often posterior draws should be stored. Simulations suggest autocorrelation is present up to 5 lags, but tapers off at around 3. Defaults to 5 to minimize autocorrelation.
 #' @param chains Number of chains to run. Implementation currently only allows for a single chain. Default is 1.
+#' @param parallel Boolean indicating whether to use parallel processing for multiple chain runs.
+#' @param n_cores Number of cores to use for parallel chain runs.
 #' @param seed Random seed.
 #' @param benchmark Boolean indicating whether to return benchmark timings of each sampling step. Primarily used for development purposes if user wants to further optimize the sampler for improved runtime. Default is FALSE. 
 #' 
@@ -30,6 +32,8 @@ mmBPFA_sampler <- function(
     iter = 5000,
     thin = 5,
     chains = 1,
+    parallel = TRUE,
+    n_cores = 1,
     seed = 101473,
     benchmark = FALSE
     ) {
@@ -40,8 +44,8 @@ mmBPFA_sampler <- function(
     if (prod(apply(dat, 2, class) == "numeric" | apply(dat, 2, class) == "integer") != 1) {
           stop("All elements in the data must be numeric or integers")
     }
-    if (warmup < 1 | iter < 1 | pre_sparse < 1) {
-        stop("Warmup, iter, and pre_sparse must all be positive integers")
+    if (warmup < 1 | iter < 1 | pre_sparse < 1 | chains < 1) {
+        stop("Warmup, iter, and pre_sparse and chains must all be positive integers")
     }
 
     # get dimensions
@@ -88,12 +92,113 @@ mmBPFA_sampler <- function(
             ibp_b = ibp_b,
             benchmark = benchmark
             )
+    } else if (!parallel & chains > 1) {
+        chain_out <- list()
+        for (i in 1:chains) {
+            chain_out[[i]] <- chain_call(
+                pre_sparse = pre_sparse,
+                warmup = warmup,
+                iter = iter,
+                thin = thin,
+                dat = dat,
+                mode = mode,
+                share_noise = share_noise,
+                d_mask = d_mask,
+                n_levels = n_levels,
+                margin_vals = margin_vals,
+                x = x,
+                lambda = lambda,
+                zeros = zeros,
+                omega = omega,
+                alpha = alpha,
+                gamma_k = gamma_k,
+                d = d,
+                dc = dc,
+                ibp_a = ibp_a,
+                ibp_b = ibp_b,
+                benchmark = benchmark
+            )
+        }
+    } else {
+        # Determine parallel implementation based on OS
+        sys_name <- unname(Sys.info()[1])
+        
+        # Use snow functionality for windows
+        if (grepl("windows", sys_name)) {
+            # make cluster
+            cl <- parallel::makeCluster(n_cores)
+            parallel::clusterExport(cl, ls(.GlobalEnv))
+            junk <- parallel::clusterEvalQ(cl, expr = {library(mmBFPA)})
+            
+            # set seeds
+            paraellel::clusterSetRNGStream(cl, 123)
+            
+            # run sampler
+            chain_out <- parallel::parLapply(
+                cl,
+                X = seq_len(chains),
+                fun = chain_call,
+                pre_sparse = pre_sparse,
+                warmup = warmup,
+                iter = iter,
+                thin = thin,
+                dat = dat,
+                mode = mode,
+                share_noise = share_noise,
+                d_mask = d_mask,
+                n_levels = n_levels,
+                margin_vals = margin_vals,
+                x = x,
+                lambda = lambda,
+                zeros = zeros,
+                omega = omega,
+                alpha = alpha,
+                gamma_k = gamma_k,
+                d = d,
+                dc = dc,
+                ibp_a = ibp_a,
+                ibp_b = ibp_b,
+                benchmark = benchmark
+            )
+            stopCluster(cl)
+        } else { 
+            # set RNG
+            RNGkind("L'Ecuyer-CMRG")
+            
+            # otherwise FORK
+            chain_out <- parallel::mclapply(
+                1:chains,
+                FUN = function(X) {
+                    chain_call(
+                        pre_sparse = pre_sparse,
+                        warmup = warmup,
+                        iter = iter,
+                        thin = thin,
+                        dat = dat,
+                        mode = mode,
+                        share_noise = share_noise,
+                        d_mask = d_mask,
+                        n_levels = n_levels,
+                        margin_vals = margin_vals,
+                        x = x,
+                        lambda = lambda,
+                        zeros = zeros,
+                        omega = omega,
+                        alpha = alpha,
+                        gamma_k = gamma_k,
+                        d = d,
+                        dc = dc,
+                        ibp_a = ibp_a,
+                        ibp_b = ibp_b,
+                        benchmark = benchmark
+                    )
+                },
+                mc.preschedule = FALSE,
+                mc.set.seed = TRUE,
+                mc.cores = n_cores
+            )
+        }
     }
-    # else {
-    #     #
-    #     # TODO #8 IMPLEMENT PARALLEL CHAINS OPTION
-    #     #
-    # }
 
     class(chain_out) <- "bpfa.results"
     attr(chain_out, "mode") <- mode
@@ -101,6 +206,9 @@ mmBPFA_sampler <- function(
     attr(chain_out, "warmup") <- warmup
     attr(chain_out, "iter") <- iter
     attr(chain_out, "chains") <- chains
+    attr(chain_out, "thin") <- thin
+    attr(chain_out, "parallel") <- parallel
+    attr(chain_out, "n_cores") <- n_cores
     attr(chain_out, "benchmark") <- benchmark
     return(chain_out)
 }
