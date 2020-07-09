@@ -3,17 +3,18 @@ import(abind)
 import(dplyr)
 import(graphics)
 import(mvtnorm)
+import(parallel)
 import(purrr)
 importFrom(Rcpp, evalCpp)
-importFrom(stats, density, median, 
+importFrom(stats, density, median,
            dpois, ppois, qpois, rpois,
            dnorm, pnorm, qnorm, rnorm,
            dlnorm, plnorm, qlnorm, rlnorm,
            dgamma, pgamma, qgamma, rgamma,
            dbeta, pbeta, qbeta, rbeta,
            dchisq, pchisq, qchisq, rchisq,
-           dt, pt, qt, rt, 
-           dunif, punif, qunif, runif, 
+           dt, pt, qt, rt,
+           dunif, punif, qunif, runif,
            dcauchy, pcauchy, qcauchy, rcauchy,
            dexp, pexp, qexp, rexp,
            dlogis, plogis, qlogis, rlogis,

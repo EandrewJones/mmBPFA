@@ -19,13 +19,14 @@ Description: A semi-parametric, multidimensional Bayesian factor analysis for mu
 License: MIT + file LICENSE
 URL: https://github.com/EandrewJones/mmBPFA
 BugReports: https://github.com/EandrewJones/mmBPFA/issues
-Depends: 
+Depends:
     R (>= 3.5.0)
 Imports:
     abind,
     dplyr,
     mvtnorm,
     purrr,
+    parallel,
     Rcpp (>= 1.0.4.6),
     RcppArmadillo (>= 0.9.870.2.0),
     stats,
@@ -38,8 +39,8 @@ Imports:
 Suggests:
     knitr,
     rmarkdown
-LinkingTo: 
-    Rcpp, 
+LinkingTo:
+    Rcpp,
     RcppArmadillo
 VignetteBuilder:
     knitr

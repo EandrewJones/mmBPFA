@@ -14,7 +14,7 @@ mmBPFA_sampler(
   iter = 5000,
   thin = 5,
   chains = 1,
-  parallel = TRUE,
+  parallel = FALSE,
   n_cores = 1,
   seed = 101473,
   benchmark = FALSE
@@ -39,7 +39,7 @@ mmBPFA_sampler(
 
 \item{chains}{Number of chains to run. Implementation currently only allows for a single chain. Default is 1.}
 
-\item{parallel}{Boolean indicating whether to use parallel processing for multiple chain runs.}
+\item{parallel}{Boolean indicating whether to use parallel processing for multiple chain runs. Default is FALSE.}
 
 \item{n_cores}{Number of cores to use for parallel chain runs.}
 

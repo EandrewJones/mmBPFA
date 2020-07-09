@@ -1,9 +1,9 @@
 #' mmBPFA Gibbs sampler function
-#' 
-#' \code{mmBPFA_sampler} is the primary functional interface for the mmBPFA package. 
-#' The sampler estimates a latent posterior distribution from the data using a Gibbs sampling procedure. 
+#'
+#' \code{mmBPFA_sampler} is the primary functional interface for the mmBPFA package.
+#' The sampler estimates a latent posterior distribution from the data using a Gibbs sampling procedure.
 #' Each conditional sampling step is written in C++ for improved sampling speed.
-#' 
+#'
 #' @param dat Data matrix.
 #' @param mode Sets the type of margins for the simulated data. Must be one of "fixed", "multi" or "mixed." Default is "fixed."
 #' @param share_noise Boolean indicating whether to sample the d hyperparameter for the factor precision draws. Setting to TRUE allows for more accurate dimension-varying precisions but takes longer to mix. Default is FALSE.
@@ -16,12 +16,12 @@
 #' @param parallel Boolean indicating whether to use parallel processing for multiple chain runs. Default is FALSE.
 #' @param n_cores Number of cores to use for parallel chain runs.
 #' @param seed Random seed.
-#' @param benchmark Boolean indicating whether to return benchmark timings of each sampling step. Primarily used for development purposes if user wants to further optimize the sampler for improved runtime. Default is FALSE. 
-#' 
+#' @param benchmark Boolean indicating whether to return benchmark timings of each sampling step. Primarily used for development purposes if user wants to further optimize the sampler for improved runtime. Default is FALSE.
+#'
 #' @return S3 object of class `bpfa.results` containing log-likelihoods, number of sampled dimensions at each step, and the posterior draws.
-#' 
+#'
 #' @export
-#' 
+#'
 mmBPFA_sampler <- function(
     dat,
     mode,
@@ -122,17 +122,17 @@ mmBPFA_sampler <- function(
     } else {
         # Determine parallel implementation based on OS
         sys_name <- unname(Sys.info()[1])
-        
+
         # Use snow functionality for windows
         if (grepl("windows", sys_name)) {
             # make cluster
             cl <- parallel::makeCluster(n_cores)
             parallel::clusterExport(cl, ls(.GlobalEnv))
             junk <- parallel::clusterEvalQ(cl, expr = {library(mmBFPA)})
-            
+
             # set seeds
-            paraellel::clusterSetRNGStream(cl, 123)
-            
+            parallel::clusterSetRNGStream(cl, 123)
+
             # run sampler
             chain_out <- parallel::parLapply(
                 cl,
@@ -161,10 +161,10 @@ mmBPFA_sampler <- function(
                 benchmark = benchmark
             )
             stopCluster(cl)
-        } else { 
+        } else {
             # set RNG
             RNGkind("L'Ecuyer-CMRG")
-            
+
             # otherwise FORK
             chain_out <- parallel::mclapply(
                 1:chains,
@@ -215,11 +215,11 @@ mmBPFA_sampler <- function(
 
 
 #' Meta-function that bundles the sampler into a chain call
-#' 
+#'
 #' Performs single chain run of the mmBPFA algorithm.
-#' 
+#'
 #' @keywords internal
-#' 
+#'
 chain_call <- function(
     pre_sparse,
     warmup,
@@ -415,10 +415,10 @@ chain_call <- function(
 }
 
 
-#' All-in-one function for the sampling procedure 
-#' 
+#' All-in-one function for the sampling procedure
+#'
 #' @keywords internal
-#' 
+#'
 sampler_phase  <- function(
     phase,
     dat,
