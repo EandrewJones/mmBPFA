@@ -13,7 +13,7 @@
 #' @param iter Number of posterior draws. 1000 draws usually suffices if runtime is an issue. Default is 5000.
 #' @param thin Indicates how often posterior draws should be stored. Simulations suggest autocorrelation is present up to 5 lags, but tapers off at around 3. Defaults to 5 to minimize autocorrelation.
 #' @param chains Number of chains to run. Implementation currently only allows for a single chain. Default is 1.
-#' @param parallel Boolean indicating whether to use parallel processing for multiple chain runs.
+#' @param parallel Boolean indicating whether to use parallel processing for multiple chain runs. Default is FALSE.
 #' @param n_cores Number of cores to use for parallel chain runs.
 #' @param seed Random seed.
 #' @param benchmark Boolean indicating whether to return benchmark timings of each sampling step. Primarily used for development purposes if user wants to further optimize the sampler for improved runtime. Default is FALSE. 
@@ -32,7 +32,7 @@ mmBPFA_sampler <- function(
     iter = 5000,
     thin = 5,
     chains = 1,
-    parallel = TRUE,
+    parallel = FALSE,
     n_cores = 1,
     seed = 101473,
     benchmark = FALSE
