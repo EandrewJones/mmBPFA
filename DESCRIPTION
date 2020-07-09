@@ -23,7 +23,7 @@ Depends:
     R (>= 3.5.0)
 Imports:
     abind,
-    dplyr,
+    dplyr (>= 0.8.5),
     mvtnorm,
     purrr,
     parallel,

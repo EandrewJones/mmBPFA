@@ -345,21 +345,22 @@ check_accuracy <- function(
     cutpoints <- results[["Cutpoints"]]
     c(..., n_levels, margin_vals) %<-% calculate_d_mask(dat = dat, mode = mode)
     if (mode == "fixed") {
-        preds <- purrr::pmap_dfr(
+        preds <- purrr::pmap(
             list(x_tbl, cutpoints),
             function(x, y) {
                 purrr::map_dbl(x, ~ margin_vals[which.max(.x < y)])
-            }
-        )
+                }
+            ) %>%
+            do.call(cbind, .)
     } else {
-        preds <- purrr::pmap_dfr(
+        preds <- purrr::pmap(
             list(x_tbl, margin_vals, cutpoints),
             function(x, y, z) {
                 purrr::map_dbl(x, ~ y[which.max(.x < z)])
-            }
-    )
+                }
+            ) %>% 
+            do.call(cbind, .)
     }
-    preds <- as.matrix(preds)
 
     # check reconstruction accuracy
     if (mode == "mixed") {
