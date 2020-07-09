@@ -179,7 +179,6 @@ destructure.mcmc.output.processed <- function(x) {
 #' @export
 process_benchmarks <- function(mcmc_object) {
     # Assertions
-
     if (!attributes(mcmc_object)$benchmark) {
         stop("mcmc_object must include timing Benchmarks for each sampling step. Please re-run the bpfa sampling with benchmark = T")
     }
@@ -187,9 +186,12 @@ process_benchmarks <- function(mcmc_object) {
     # get benchmarks
     if (attributes(mcmc_object)$parallel) {
         unzip_benchmarks <- purrr::map(mcmc_object, ~ .x[["Benchmarks"]])
-        pre_sparse_benchmarks <- purrr::map(unzip_benchmarks, ~ .x$pre_sparse)
-        warmup_benchmarks <- purrr::map_dfr(unzip_benchmarks, ~ .x$warmup)
-        mcmc_benchmarks <- purrr::map_dfr(unzip_benchmarks, ~ .x$mcmc)
+        pre_sparse_benchmarks <- purrr::map(unzip_benchmarks, ~ .x$pre_sparse) %>%
+            do.call(rbind, .)
+        warmup_benchmarks <- purrr::map(unzip_benchmarks, ~ .x$warmup) %>% 
+            do.call(rbind, .)
+        mcmc_benchmarks <- purrr::map(unzip_benchmarks, ~ .x$mcmc) %>% 
+            do.call(rbind, .)
         benchmarks <- list(
             "pre_sparse" = pre_sparse_benchmarks,
             "warmup" = warmup_benchmarks,
@@ -267,13 +269,17 @@ process_benchmarks <- function(mcmc_object) {
 #' @export
 #' 
 check_logliks <- function(
-    log_liks,
+    results,
     probs = c(0.05, 0.1, 0.2, 0.5, 0.8, 0.9, 0.95),
     plot = TRUE
     ) {
 
     # Assertions
-    if(!is.vector(log_liks)) stop("log_liks must be a vector of draws!")
+    class_compat <- attributes(results)$class == "mcmc.output.processed"
+    if (!class_compat) stop("Results must be object of class 'mcmc.output.processed'")
+    
+    # get log-likelihoods
+    log_liks <- results$`log-Likelihoods`[[2]]
 
     # get measures of central tendency
     mean_log_liks <- round(mean(log_liks), 3)
