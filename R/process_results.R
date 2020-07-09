@@ -22,9 +22,9 @@ process_results <- function(
 
     # extract results
     if (attributes(mcmc_object)$parallel) {
-        n_dims <- do.call(c, purrr::map(mcmc_object, ~ .x[[1]]))
-        log_liks <- do.call(c, purrr::map(mcmc_object, ~ .x[[2]]))
-        results <- do.call(rbind, purrr::map(mcmc_object, ~ .x[[3]]))
+        n_dims <- do.call(c, purrr::map(mcmc_object, ~ .x[["Number of Dimensions"]]))
+        log_liks <- do.call(c, purrr::map(mcmc_object, ~ .x[["Log-Likelihoods"]]))
+        results <- do.call(rbind, purrr::map(mcmc_object, ~ .x[["MCMC Results"]]))
     } else {
         n_dims <- mcmc_object[[1]]
         log_liks <- mcmc_object[[2]]
@@ -150,6 +150,7 @@ process_results <- function(
     class(output_list) <- "mcmc.output.processed"
     attr(output_list, "Include standard errors") <- SE
     attr(output_list, "Conf. Interval") <- p
+    attr(output_list, "Mode") <- mode
     attr(output_list, "Message") <- out_msg
 
     return(output_list)
@@ -176,7 +177,6 @@ destructure.mcmc.output.processed <- function(x) {
 #' @return A list containing the raw benchmarks and average timing per sample step.
 #' 
 #' @export
-# TODO #6 update functionality for multi-chain outputs?
 process_benchmarks <- function(mcmc_object) {
     # Assertions
 
@@ -185,8 +185,20 @@ process_benchmarks <- function(mcmc_object) {
     }
 
     # get benchmarks
-    benchmarks <- mcmc_object[["Benchmarks"]]
-
+    if (attributes(mcmc_object)$parallel) {
+        unzip_benchmarks <- purrr::map(mcmc_object, ~ .x[["Benchmarks"]])
+        pre_sparse_benchmarks <- purrr::map(unzip_benchmarks, ~ .x$pre_sparse)
+        warmup_benchmarks <- purrr::map_dfr(unzip_benchmarks, ~ .x$warmup)
+        mcmc_benchmarks <- purrr::map_dfr(unzip_benchmarks, ~ .x$mcmc)
+        benchmarks <- list(
+            "pre_sparse" = pre_sparse_benchmarks,
+            "warmup" = warmup_benchmarks,
+            "mcmc" = mcmc_benchmarks
+        )
+    } else {
+        benchmarks <- mcmc_object[["Benchmarks"]]
+    }
+    
     # reshape raw benchmarks
     raw_times_out <- benchmarks %>%
         dplyr::bind_rows(.id = "phase") %>%
@@ -313,7 +325,6 @@ check_accuracy <- function(
     dat,
     results,
     true_vals = NULL,
-    mode,
     confusion = T
     ) {
     # Assertions
@@ -321,7 +332,10 @@ check_accuracy <- function(
     if (!class_check) stop("Results must be of class `mcmc.output.process`.")
     compat_check <- attributes(results)$`Include standard errors`
     if (compat_check) stop("Processed results must not include standard errors. Please re-run process_results() with SE set to FALSE.")
-
+    
+    # get mode
+    mode <- attributes(results)$Mode
+    
     # get results
     stable_K <- results[["Stable Dimensions"]]
     lambda <- results[["Factor Loadings"]]
@@ -412,9 +426,9 @@ check_accuracy <- function(
     }
 
     # produce confusion matrix
-    if (confusion) {
-        if (mode != "fixed") stop("Cannot produce confusion matrix for multi/mixed-modal data.")
-
+    if (confusion & mode != "fixed") {
+        warning("Cannot produce confusion matrix for multi- or mixed-mode data. Returning results without confusion matrix.")
+    } else if (confusion) {
         # confusion matrix
         values <- sort(unique(as.vector(dat)))
         confusion_mat <- matrix(0, nrow = length(values), ncol = length(values))
