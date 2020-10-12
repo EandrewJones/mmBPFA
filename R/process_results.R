@@ -125,10 +125,10 @@ process_results <- function(
             cutpoint_array <- abind::abind(purrr::map(cutpoints, ~ .x[[x]]), along = 3)
             cutpoint_mean <- apply(cutpoint_array, 1:2, mean, simplify = FALSE)
             cutpoint_mean <- apply(cutpoint_mean, 2, unique)
-            if (mode == "multi") {
-                cutpoint_mean
-            } else {
+            if (mode == "fixed") {
                 tibble::as_tibble(cutpoint_mean, .name_repair = "minimal")
+            } else {
+                cutpoint_mean
             }
         }
     )
@@ -331,7 +331,8 @@ check_accuracy <- function(
     dat,
     results,
     true_vals = NULL,
-    confusion = T
+    confusion = T,
+    return_preds = F
     ) {
     # Assertions
     class_check <- class(results) == "mcmc.output.processed"
@@ -467,6 +468,11 @@ check_accuracy <- function(
         output_list[["Confusion Matrix"]] <- confusion_mat
         output_list[["Class-wise Precision/Recall"]] <- pc_df
         output_list[["Kappa Score"]] <- kappa
+    }
+    
+    # Return preds
+    if (return_preds) {
+        output_list[["Predictions"]] <- preds
     }
 
     return(output_list)

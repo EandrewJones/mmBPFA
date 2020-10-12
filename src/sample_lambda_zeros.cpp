@@ -78,7 +78,7 @@ List sample_lambda_and_zeros(
                 // number of features
                 int m_jk = sum(new_zeros.col(k)) - new_zeros(j, k);
 
-                // swith for sparsity inducing prior
+                // switch for sparsity inducing prior
                 if (sparse == true) {
                     log_rp = log(m_jk) - log(p - m_jk - 1);
                 }

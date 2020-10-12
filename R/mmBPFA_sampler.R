@@ -50,7 +50,7 @@ mmBPFA_sampler <- function(
 
     # get dimensions
     c(n, p) %<-% get_dims_2d(x = dat, warn = TRUE)
-    if (p > n) stop("Data matrix is rank deficient (P > N). Please re-check data.")
+    # if (p > n) stop("Data matrix is rank deficient (P > N). Please re-check data.")
 
     # Check K_start against dimensions
     K_start <- check_k_start(K_start = K_start, p = p, n = n)
@@ -252,7 +252,7 @@ chain_call <- function(
 
     # initialize benchmark container
     if (benchmark) pre_time_log <- tibble::tibble("time" = list(NA), .rows = pre_sparse)
-
+    
     for (step in 1:pre_sparse) {
         # get new samples
         c(x, zeros, lambda, omega, alpha, gamma_k, d, dc, ibp_a, ibp_b, time_log) %<-% sampler_phase(
@@ -275,6 +275,7 @@ chain_call <- function(
             ibp_b = ibp_b,
             benchmark = benchmark
         )
+        
         # update progress bar
         utils::setTxtProgressBar(pb, step)
 
