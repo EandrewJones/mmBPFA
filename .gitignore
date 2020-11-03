@@ -17,6 +17,9 @@
 # Output files from R CMD check
 /*.Rcheck/
 
+# Scratch pad
+R/scratch_pad.R
+
 # RStudio files
 .Rproj.user/
 

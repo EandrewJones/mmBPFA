@@ -57,7 +57,7 @@ process_results <- function(
     c(zeros, lambda, omega, alpha, gamma_k, cutpoints) %<-% results
 
     # 1) zeros
-    zero_csums_array <- t(abind::abind(purrr::map(zeros, ~ .x[, 1:stable_K] %>% colSums()), along = 2))
+    zero_csums_array <- t(abind::abind(purrr::map(zeros, ~ .x[, 1:stable_K, drop = F] %>% colSums()), along = 2))
     zero_csums_mean <- colMeans(zero_csums_array)
     dim_order <- rev(order(zero_csums_mean))
 
