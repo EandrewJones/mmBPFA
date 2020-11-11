@@ -16,10 +16,10 @@ process_results <- function(
     SE = T,
     p = c(0.05, 0.95),
     to_tibble = T
-    ) {
+) {
     # Assertions
     if (class(mcmc_object) != "bpfa.results") stop("mcmc_object must be the output of bpfa sampling run.")
-
+    
     # extract results
     if (attributes(mcmc_object)$parallel) {
         n_dims <- do.call(c, purrr::map(mcmc_object, ~ .x[["Number of Dimensions"]]))
@@ -33,16 +33,16 @@ process_results <- function(
     
     # get mode
     mode <- attributes(mcmc_object)$mode
-
+    
     # Process n_dims
     median_K <- median(n_dims)
     stable_K <- min(n_dims)
-
+    
     out_msg <- paste(
         "The sampler discovered", median_K, "dimensions (median),", stable_K, "of which are stable dimensions. Processing results for first", stable_K, "stable dimensions.\n"
     )
     cat(out_msg)
-
+    
     # process log_liks
     if (to_tibble) {
         log_liks_out <- tibble::tibble(
@@ -52,15 +52,15 @@ process_results <- function(
     } else {
         log_liks_out <- log_liks
     }
-
+    
     # Process results
     c(zeros, lambda, omega, alpha, gamma_k, cutpoints) %<-% results
-
+    
     # 1) zeros
-    zero_csums_array <- t(abind::abind(purrr::map(zeros, ~ .x[, 1:stable_K, drop = F] %>% colSums()), along = 2))
+    zero_csums_array <- t(abind::abind(purrr::map(zeros, ~ .x[, 1:stable_K, drop = FALSE] %>% colSums()), along = 2))
     zero_csums_mean <- colMeans(zero_csums_array)
     dim_order <- rev(order(zero_csums_mean))
-
+    
     # 2) lambda (matrix)
     lambda_out <- extract_omega_lambda_mean_se(
         x = lambda,
@@ -69,7 +69,7 @@ process_results <- function(
         p = p,
         se = SE
     )
-
+    
     # 3) omega (matrix)
     omega_out <- extract_omega_lambda_mean_se(
         x = omega,
@@ -78,7 +78,7 @@ process_results <- function(
         p = p,
         se = SE
     )
-
+    
     # 4) process alpha
     alpha_mat <- do.call(cbind, alpha)
     alpha_mean <- rowMeans(alpha_mat)
@@ -97,10 +97,10 @@ process_results <- function(
             "alpha" = as.vector(alpha_out)
         )
     }
-
+    
     # 4) process gamma_k
     gamma_k_mat <- do.call(cbind, purrr::map(gamma_k, ~ .x[1:stable_K]))
-    gamma_k_mat <- gamma_k_mat[dim_order, ]
+    if (stable_K > 1) gamma_k_mat <- gamma_k_mat[dim_order, ]
     gamma_k_mean <- rowMeans(gamma_k_mat)
     gamma_k_out <- round(gamma_k_mean, 7)
     if (SE) {
@@ -117,7 +117,7 @@ process_results <- function(
             "gamma_k" = gamma_k_out
         )
     }
-
+    
     # 5) process cutpoints
     c(a_mean, b_mean) %<-% purrr::map(
         c("a", "b"),
@@ -135,7 +135,7 @@ process_results <- function(
     a_sort <- purrr::map(a_mean, ~ sort(.x)[-1])
     b_sort <- purrr::map(b_mean, ~ sort(.x)[-length(.x)])
     cutpoints <- purrr::map2(a_sort, b_sort, ~ c(colMeans(rbind(.x, .y)), Inf))
-
+    
     # store outputs
     output_list <- list()
     output_list[["Stable Dimensions"]] <- stable_K
@@ -146,15 +146,159 @@ process_results <- function(
     output_list[["Item-level Intercepts"]] <- alpha_out
     output_list[["log-Likelihoods"]] <- log_liks_out
     output_list[["Cutpoints"]] <- cutpoints
-
+    
     class(output_list) <- "mcmc.output.processed"
     attr(output_list, "Include standard errors") <- SE
     attr(output_list, "Conf. Interval") <- p
     attr(output_list, "Mode") <- mode
     attr(output_list, "Message") <- out_msg
-
+    
     return(output_list)
 }
+# process_results <- function(
+#     mcmc_object,
+#     SE = T,
+#     p = c(0.05, 0.95),
+#     to_tibble = T
+#     ) {
+#     # Assertions
+#     if (class(mcmc_object) != "bpfa.results") stop("mcmc_object must be the output of bpfa sampling run.")
+# 
+#     # extract results
+#     if (attributes(mcmc_object)$parallel) {
+#         n_dims <- do.call(c, purrr::map(mcmc_object, ~ .x[["Number of Dimensions"]]))
+#         log_liks <- do.call(c, purrr::map(mcmc_object, ~ .x[["Log-Likelihoods"]]))
+#         results <- do.call(rbind, purrr::map(mcmc_object, ~ .x[["MCMC Results"]]))
+#     } else {
+#         n_dims <- mcmc_object[[1]]
+#         log_liks <- mcmc_object[[2]]
+#         results <- mcmc_object[[3]]
+#     }
+#     
+#     # get mode
+#     mode <- attributes(mcmc_object)$mode
+# 
+#     # Process n_dims
+#     median_K <- median(n_dims)
+#     stable_K <- min(n_dims)
+# 
+#     out_msg <- paste(
+#         "The sampler discovered", median_K, "dimensions (median),", stable_K, "of which are stable dimensions. Processing results for first", stable_K, "stable dimensions.\n"
+#     )
+#     cat(out_msg)
+# 
+#     # process log_liks
+#     if (to_tibble) {
+#         log_liks_out <- tibble::tibble(
+#             "mcmc_iter" = 1:length(log_liks),
+#             "log_liks" = log_liks
+#         )
+#     } else {
+#         log_liks_out <- log_liks
+#     }
+# 
+#     # Process results
+#     c(zeros, lambda, omega, alpha, gamma_k, cutpoints) %<-% results
+# 
+#     # 1) zeros
+#     zero_csums_array <- t(abind::abind(purrr::map(zeros, ~ .x[, 1:stable_K, drop = F] %>% colSums()), along = 2))
+#     zero_csums_mean <- colMeans(zero_csums_array)
+#     dim_order <- rev(order(zero_csums_mean))
+# 
+#     # 2) lambda (matrix)
+#     lambda_out <- extract_omega_lambda_mean_se(
+#         x = lambda,
+#         dim_order = dim_order,
+#         stable_K = stable_K,
+#         p = p,
+#         se = SE
+#     )
+# 
+#     # 3) omega (matrix)
+#     omega_out <- extract_omega_lambda_mean_se(
+#         x = omega,
+#         dim_order = dim_order,
+#         stable_K = stable_K,
+#         p = p,
+#         se = SE
+#     )
+# 
+#     # 4) process alpha
+#     alpha_mat <- do.call(cbind, alpha)
+#     alpha_mean <- rowMeans(alpha_mat)
+#     alpha_out <- round(alpha_mean, 7)
+#     if (SE) {
+#         se_mat <- apply(alpha_mat, 1, quantile, p = p)
+#         se_long <- t(se_mat)
+#         alpha_out <- cbind(1:length(alpha_mean), alpha_mean, se_long)
+#         names(alpha_out) <- c("row", "mean", paste0("ci_", p[1]), paste0("ci_", p[2]))
+#         alpha_out <- round(alpha_out, 7)
+#         alpha_out <- tibble::as_tibble(alpha_out, .name_repair = "minimal")
+#     }
+#     if (to_tibble & !SE) {
+#         alpha_out <- tibble::tibble(
+#             "item" = 1:length(alpha_out),
+#             "alpha" = as.vector(alpha_out)
+#         )
+#     }
+# 
+#     # 4) process gamma_k
+#     gamma_k_mat <- do.call(cbind, purrr::map(gamma_k, ~ .x[1:stable_K]))
+#     gamma_k_mat <- gamma_k_mat[dim_order, ]
+#     gamma_k_mean <- rowMeans(gamma_k_mat)
+#     gamma_k_out <- round(gamma_k_mean, 7)
+#     if (SE) {
+#         se_mat <- apply(gamma_k_mat, 1, quantile, p = p)
+#         se_long <- t(se_mat)
+#         gamma_k_out <- cbind(1:length(gamma_k_mean), gamma_k_mean, se_long)
+#         names(gamma_k_out) <- c("row", "mean", paste0("ci_", p[1]), paste0("ci_", p[2]))
+#         gamma_k_out <- round(gamma_k_out, 7)
+#         gamma_k_out <- tibble::as_tibble(gamma_k_out, .name_repair = "minimal")
+#     }
+#     if (to_tibble & !SE) {
+#         gamma_k_out <- tibble::tibble(
+#             "dimension" = 1:length(gamma_k_out),
+#             "gamma_k" = gamma_k_out
+#         )
+#     }
+# 
+#     # 5) process cutpoints
+#     c(a_mean, b_mean) %<-% purrr::map(
+#         c("a", "b"),
+#         function(x) {
+#             cutpoint_array <- abind::abind(purrr::map(cutpoints, ~ .x[[x]]), along = 3)
+#             cutpoint_mean <- apply(cutpoint_array, 1:2, mean, simplify = FALSE)
+#             cutpoint_mean <- apply(cutpoint_mean, 2, unique)
+#             if (mode == "fixed") {
+#                 tibble::as_tibble(cutpoint_mean, .name_repair = "minimal")
+#             } else {
+#                 cutpoint_mean
+#             }
+#         }
+#     )
+#     a_sort <- purrr::map(a_mean, ~ sort(.x)[-1])
+#     b_sort <- purrr::map(b_mean, ~ sort(.x)[-length(.x)])
+#     cutpoints <- purrr::map2(a_sort, b_sort, ~ c(colMeans(rbind(.x, .y)), Inf))
+# 
+#     # store outputs
+#     output_list <- list()
+#     output_list[["Stable Dimensions"]] <- stable_K
+#     output_list[["Median Number Dimensions"]] <- median_K
+#     output_list[["Factor Loadings"]] <- lambda_out
+#     output_list[["Factor Scores"]] <- omega_out
+#     output_list[["Factor Precisions"]] <- gamma_k_out
+#     output_list[["Item-level Intercepts"]] <- alpha_out
+#     output_list[["log-Likelihoods"]] <- log_liks_out
+#     output_list[["Cutpoints"]] <- cutpoints
+# 
+#     class(output_list) <- "mcmc.output.processed"
+#     attr(output_list, "Include standard errors") <- SE
+#     attr(output_list, "Conf. Interval") <- p
+#     attr(output_list, "Mode") <- mode
+#     attr(output_list, "Message") <- out_msg
+# 
+#     return(output_list)
+# }
 
 
 #' zeallot destructure function
@@ -488,45 +632,115 @@ extract_omega_lambda_mean_se <- function(
     p,
     se = TRUE,
     to_tibble = TRUE
-    ) {
+) {
     # reshape samples
-    x_array <- abind::abind(purrr::map(x, ~ .x[, 1:stable_K]), along = 3)
-    x_array <- x_array[, dim_order, ]
-    x_mean <- apply(x_array, 1:2, mean, simplify = F)
-
+    if (stable_K > 1) {
+        x_array <- abind::abind(purrr::map(x, ~ .x[, 1:stable_K]), along = 3)
+        x_array <- x_array[, dim_order, ]
+        x_mean <- apply(x_array, 1:2, mean, simplify = F)
+    } else {
+        x_array <- abind::abind(purrr::map(x, ~ .x[, 1:stable_K]), along = 2)
+        x_mean <- rowMeans(x_array)
+    }
+    
+    
     # no se output
     x_out <- tibble::as_tibble(x_mean, .name_repair = "minimal")
     names(x_out) <- paste0("dim_", 1:stable_K)
-
+    
     # Add standard errors
     if (se) {
-        se_array <- apply(x_array, 1:2, quantile, p = p, simplify = F)
-        se_perm <- aperm(se_array, c(2, 3, 1))
-        se_long <- apply(se_perm, 3, matrix, nrow = prod(dim(se_perm)[1:2]), ncol = 1)
-        x_mean_long <- matrix(x_mean, nrow = prod(dim(x_mean)), ncol = 1)
-        x_out <- tibble::as_tibble(
-            cbind(x_mean_long, se_long),
-            .name_repair = "minimal"
-        )
-        names(x_out) <- c("mean", paste0("ci_", p[1]), paste0("ci_", p[2]))
-        x_out$dimension <- rep(1:stable_K, each = nrow(x_mean))
-        x_out <- dplyr::select(x_out, dimension, dplyr::everything())
+        if (stable_K > 1) {
+            se_array <- apply(x_array, 1:2, quantile, p = p, simplify = F)
+            se_perm <- aperm(se_array, c(2, 3, 1))
+            se_long <- apply(se_perm, 3, matrix, nrow = prod(dim(se_perm)[1:2]), ncol = 1)
+            x_mean_long <- matrix(x_mean, nrow = prod(dim(x_mean)), ncol = 1)
+            x_out <- tibble::as_tibble(
+                cbind(x_mean_long, se_long),
+                .name_repair = "minimal"
+            )
+            names(x_out) <- c("mean", paste0("ci_", p[1]), paste0("ci_", p[2]))
+            x_out$dimension <- rep(1:stable_K, each = nrow(x_mean))
+            x_out <- dplyr::select(x_out, dimension, dplyr::everything())
+        } else {
+            se_array <- apply(x_array, 1, quantile, p = p, simplify = F)
+            x_out <- tibble::as_tibble(
+                cbind(x_mean, t(se_array)),
+                .name_repair = 'minimal'
+            )
+            names(x_out) <- c("mean", paste0("ci_", p[1]), paste0("ci_", p[2]))
+            x_out$dimension <- rep(1:stable_K, each = length(x_mean))
+            x_out <- dplyr::select(x_out, dimension, dplyr::everything())
+        }
     }
-
+    
     # add row (feature or observation) numbers and round
     if (se) {
-        x_out$row <- rep(1:nrow(x_mean), stable_K)
+        if (stable_K > 1) {
+            x_out$row <- rep(1:nrow(x_mean), stable_K)  
+        } else {
+            x_out$row <- rep(1:length(x_mean), stable_K)
+        }
     } else {
         x_out$row <- 1:nrow(x_out)
     }
-
+    
     x_out <- dplyr::select(x_out, row, dplyr::everything())
     x_out <- round(x_out, 7)
-
+    
     if (!to_tibble) {
         x_out <- as.matrix(x_out)
     }
-
+    
     # output
     return(x_out)
 }
+# extract_omega_lambda_mean_se <- function(
+#     x,
+#     dim_order,
+#     stable_K,
+#     p,
+#     se = TRUE,
+#     to_tibble = TRUE
+#     ) {
+#     # reshape samples
+#     x_array <- abind::abind(purrr::map(x, ~ .x[, 1:stable_K]), along = 3)
+#     x_array <- x_array[, dim_order, ]
+#     x_mean <- apply(x_array, 1:2, mean, simplify = F)
+# 
+#     # no se output
+#     x_out <- tibble::as_tibble(x_mean, .name_repair = "minimal")
+#     names(x_out) <- paste0("dim_", 1:stable_K)
+# 
+#     # Add standard errors
+#     if (se) {
+#         se_array <- apply(x_array, 1:2, quantile, p = p, simplify = F)
+#         se_perm <- aperm(se_array, c(2, 3, 1))
+#         se_long <- apply(se_perm, 3, matrix, nrow = prod(dim(se_perm)[1:2]), ncol = 1)
+#         x_mean_long <- matrix(x_mean, nrow = prod(dim(x_mean)), ncol = 1)
+#         x_out <- tibble::as_tibble(
+#             cbind(x_mean_long, se_long),
+#             .name_repair = "minimal"
+#         )
+#         names(x_out) <- c("mean", paste0("ci_", p[1]), paste0("ci_", p[2]))
+#         x_out$dimension <- rep(1:stable_K, each = nrow(x_mean))
+#         x_out <- dplyr::select(x_out, dimension, dplyr::everything())
+#     }
+# 
+#     # add row (feature or observation) numbers and round
+#     if (se) {
+#         x_out$row <- rep(1:nrow(x_mean), stable_K)
+#     } else {
+#         x_out$row <- 1:nrow(x_out)
+#     }
+# 
+#     x_out <- dplyr::select(x_out, row, dplyr::everything())
+#     x_out <- round(x_out, 7)
+# 
+#     if (!to_tibble) {
+#         x_out <- as.matrix(x_out)
+#     }
+# 
+#     # output
+#     return(x_out)
+# }
