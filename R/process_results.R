@@ -695,52 +695,32 @@ extract_omega_lambda_mean_se <- function(
     # output
     return(x_out)
 }
-# extract_omega_lambda_mean_se <- function(
-#     x,
-#     dim_order,
-#     stable_K,
-#     p,
-#     se = TRUE,
-#     to_tibble = TRUE
-#     ) {
-#     # reshape samples
-#     x_array <- abind::abind(purrr::map(x, ~ .x[, 1:stable_K]), along = 3)
-#     x_array <- x_array[, dim_order, ]
-#     x_mean <- apply(x_array, 1:2, mean, simplify = F)
-# 
-#     # no se output
-#     x_out <- tibble::as_tibble(x_mean, .name_repair = "minimal")
-#     names(x_out) <- paste0("dim_", 1:stable_K)
-# 
-#     # Add standard errors
-#     if (se) {
-#         se_array <- apply(x_array, 1:2, quantile, p = p, simplify = F)
-#         se_perm <- aperm(se_array, c(2, 3, 1))
-#         se_long <- apply(se_perm, 3, matrix, nrow = prod(dim(se_perm)[1:2]), ncol = 1)
-#         x_mean_long <- matrix(x_mean, nrow = prod(dim(x_mean)), ncol = 1)
-#         x_out <- tibble::as_tibble(
-#             cbind(x_mean_long, se_long),
-#             .name_repair = "minimal"
-#         )
-#         names(x_out) <- c("mean", paste0("ci_", p[1]), paste0("ci_", p[2]))
-#         x_out$dimension <- rep(1:stable_K, each = nrow(x_mean))
-#         x_out <- dplyr::select(x_out, dimension, dplyr::everything())
-#     }
-# 
-#     # add row (feature or observation) numbers and round
-#     if (se) {
-#         x_out$row <- rep(1:nrow(x_mean), stable_K)
-#     } else {
-#         x_out$row <- 1:nrow(x_out)
-#     }
-# 
-#     x_out <- dplyr::select(x_out, row, dplyr::everything())
-#     x_out <- round(x_out, 7)
-# 
-#     if (!to_tibble) {
-#         x_out <- as.matrix(x_out)
-#     }
-# 
-#     # output
-#     return(x_out)
-# }
+
+#' function to identify stable dimensions from sampling run
+#' 
+#' @keywords internal 
+find_stable_dims <- function(zeros, n_dims, threshold = 0.5) {
+  
+  # Sort zeros vector using euclidean distance between
+  stable_init <- min(n_dims) 
+  zeros_list <- purrr::map(zeros, ~ .x[, 1:stable_init, drop=FALSE] %>% t())
+  zeros_lead <- zeros_list[-1]
+  zeros_lag <- zeros_list[-length(zeros_list)]
+  zeros_order <- map2(zeros_lag, zeros_lead, 
+                      ~ rdist::cdist(X = .x, Y = .y, 'euclidean') %>% 
+                        apply(., 1, which.min)
+  ) %>% 
+    do.call(rbind, .)
+  
+  # Calculate stability via entropy
+  zeros_median <- zeros_order %>% apply(., 2, median)
+  zeros_entropy <- zeros_order %>% apply(., 2, function(x) {
+    p <- table(x) / length(x)
+    -sum(p*log(p))
+  })
+  
+  # Keep dimensions below stability threshold
+  stable_K <- which(zeros_entropy < threshold)
+  
+  return(stable_K)
+}
