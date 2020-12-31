@@ -36,10 +36,11 @@ process_results <- function(
     
     # Process n_dims
     median_K <- median(n_dims)
-    stable_K <- min(n_dims)
+    stable_K <- find_stable_dims(zeros = zeros, n_dims = n_dims)
     
     out_msg <- paste(
-        "The sampler discovered", median_K, "dimensions (median),", stable_K, "of which are stable dimensions. Processing results for first", stable_K, "stable dimensions.\n"
+      "The sampler discovered", median_K, "dimensions (median),", length(stable_K), 
+      "of which are stable dimensions. Processing results for first", length(stable_K), "stable dimensions.\n"
     )
     cat(out_msg)
     
@@ -57,9 +58,9 @@ process_results <- function(
     c(zeros, lambda, omega, alpha, gamma_k, cutpoints) %<-% results
     
     # 1) zeros
-    zero_csums_array <- t(abind::abind(purrr::map(zeros, ~ .x[, 1:stable_K, drop = FALSE] %>% colSums()), along = 2))
+    zero_csums_array <- t(abind::abind(purrr::map(zeros, ~ .x[, stable_K, drop = FALSE] %>% colSums()), along = 2))
     zero_csums_mean <- colMeans(zero_csums_array)
-    dim_order <- rev(order(zero_csums_mean))
+    dim_order <- order(zero_csums_mean, decreasing = T)
     
     # 2) lambda (matrix)
     lambda_out <- extract_omega_lambda_mean_se(
