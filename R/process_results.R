@@ -99,8 +99,8 @@ process_results <- function(
     }
     
     # 4) process gamma_k
-    gamma_k_mat <- do.call(cbind, purrr::map(gamma_k, ~ .x[1:stable_K]))
-    if (stable_K > 1) gamma_k_mat <- gamma_k_mat[dim_order, ]
+    gamma_k_mat <- do.call(cbind, purrr::map(gamma_k, ~ .x[stable_K]))
+    if (length(stable_K) > 1) gamma_k_mat <- gamma_k_mat[dim_order, ]
     gamma_k_mean <- rowMeans(gamma_k_mat)
     gamma_k_out <- round(gamma_k_mean, 7)
     if (SE) {
@@ -555,6 +555,7 @@ check_accuracy <- function(
         true_K <- ncol(true_lambda)
 
         # get correct dimensions from sampled parameters
+	# TODO adjust for new stable_K implementation
         K <- min(true_K, stable_K)
         lambda <- lambda[, 1:K]
         true_lambda <- true_lambda[, 1:K]
@@ -634,23 +635,23 @@ extract_omega_lambda_mean_se <- function(
     to_tibble = TRUE
 ) {
     # reshape samples
-    if (stable_K > 1) {
-        x_array <- abind::abind(purrr::map(x, ~ .x[, 1:stable_K]), along = 3)
+    if (length(stable_K) > 1) {
+        x_array <- abind::abind(purrr::map(x, ~ .x[, stable_K]), along = 3)
         x_array <- x_array[, dim_order, ]
         x_mean <- apply(x_array, 1:2, mean, simplify = F)
     } else {
-        x_array <- abind::abind(purrr::map(x, ~ .x[, 1:stable_K]), along = 2)
+        x_array <- abind::abind(purrr::map(x, ~ .x[, stable_K]), along = 2)
         x_mean <- rowMeans(x_array)
     }
     
     
     # no se output
     x_out <- tibble::as_tibble(x_mean, .name_repair = "minimal")
-    names(x_out) <- paste0("dim_", 1:stable_K)
+    names(x_out) <- paste0("dim_", 1:length(stable_K))
     
     # Add standard errors
     if (se) {
-        if (stable_K > 1) {
+        if (length(stable_K) > 1) {
             se_array <- apply(x_array, 1:2, quantile, p = p, simplify = F)
             se_perm <- aperm(se_array, c(2, 3, 1))
             se_long <- apply(se_perm, 3, matrix, nrow = prod(dim(se_perm)[1:2]), ncol = 1)
@@ -660,7 +661,7 @@ extract_omega_lambda_mean_se <- function(
                 .name_repair = "minimal"
             )
             names(x_out) <- c("mean", paste0("ci_", p[1]), paste0("ci_", p[2]))
-            x_out$dimension <- rep(1:stable_K, each = nrow(x_mean))
+            x_out$dimension <- rep(1:length(stable_K), each = nrow(x_mean))
             x_out <- dplyr::select(x_out, dimension, dplyr::everything())
         } else {
             se_array <- apply(x_array, 1, quantile, p = p, simplify = F)
@@ -669,17 +670,17 @@ extract_omega_lambda_mean_se <- function(
                 .name_repair = 'minimal'
             )
             names(x_out) <- c("mean", paste0("ci_", p[1]), paste0("ci_", p[2]))
-            x_out$dimension <- rep(1:stable_K, each = length(x_mean))
+            x_out$dimension <- rep(1:length(stable_K), each = length(x_mean))
             x_out <- dplyr::select(x_out, dimension, dplyr::everything())
         }
     }
     
     # add row (feature or observation) numbers and round
     if (se) {
-        if (stable_K > 1) {
-            x_out$row <- rep(1:nrow(x_mean), stable_K)  
+        if (length(stable_K) > 1) {
+            x_out$row <- rep(1:nrow(x_mean), length(stable_K))  
         } else {
-            x_out$row <- rep(1:length(x_mean), stable_K)
+            x_out$row <- rep(1:length(x_mean), length(stable_K))
         }
     } else {
         x_out$row <- 1:nrow(x_out)
