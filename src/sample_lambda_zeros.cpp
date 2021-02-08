@@ -13,7 +13,7 @@ using namespace Rcpp;
 //' @param alpha A numeric vector of item-intercepts of length P.
 //' @param gamma_k A numeric vector of factor precisions of length K.
 //' @param dc A integer vector of counts for the number of times each dimensions has been sampled.
-//' @param ibp_a A scalar double, Indian Buffet Process beta parameter.
+//' @param ibp_a A scalar double, Indian Buffet Process alpha parameter.
 //' @param ibp_b A scalar double, Indian Buffet Process beta parameter.
 //' @param tau A tunable hyperparameter for the poisson draws of new dishes to be sampled.
 //' @param sparse A boolean indicating whether to include sparsity-inducing prior.

@@ -30,6 +30,7 @@ process_results <- function(
         log_liks <- mcmc_object[[2]]
         results <- mcmc_object[[3]]
     }
+    c(zeros, lambda, omega, alpha, gamma_k, cutpoints) %<-% results
     
     # get mode
     mode <- attributes(mcmc_object)$mode
@@ -54,8 +55,6 @@ process_results <- function(
         log_liks_out <- log_liks
     }
     
-    # Process results
-    c(zeros, lambda, omega, alpha, gamma_k, cutpoints) %<-% results
     
     # 1) zeros
     zero_csums_array <- t(abind::abind(purrr::map(zeros, ~ .x[, stable_K, drop = FALSE] %>% colSums()), along = 2))
