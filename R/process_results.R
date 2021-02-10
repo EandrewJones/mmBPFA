@@ -730,8 +730,8 @@ find_stable_dims <- function(zeros, n_dims, threshold = 0.5) {
 #'
 #' @keywords internal
 rmse_mae <- function(actual, predicted) {
-  rmse <- sqrt(mean((actual - predicted)^2))
-  mae <- mean(abs(actual - predicted))
+  rmse <- sqrt(mean((actual - predicted)^2, na.rm = T))
+  mae <- mean(abs(actual - predicted), na.rm = T)
   return(list("rmse" = rmse, "mae" = mae))
 }
 
