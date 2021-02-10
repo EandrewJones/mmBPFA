@@ -471,6 +471,7 @@ check_logliks <- function(
 #' 
 #' @export
 #' 
+# TODO implement geometric mean probability
 check_accuracy <- function(
     dat,
     results,
@@ -526,27 +527,25 @@ check_accuracy <- function(
             ) %>% 
             do.call(cbind, .)
     }
-
+    
     # check reconstruction accuracy
     if (mode == "mixed") {
-        accuracy <- sqrt(mean((preds - dat)^2, na.rm = T))
+        rmse <- sqrt(mean((preds - dat)^2, na.rm = T))
     } else {
         accuracy <- sum(dat == preds, na.rm = T) / length(dat[!is.na(dat)])
+        c(rmse, mae) %<-% rmse_mae(actual = actual, predicted = predicted)
     }
 
     # store output
     output_list <- list()
-    output_list[["Observed Accuracy"]] <- accuracy
+    output_list[["RMSE"]] <- rmse
+    if (mode ! = 'mixed') {
+      output_list[['accuracy']] <- accuracy
+      output_list[['MAE']] <- mae
+    }
 
     # check accuracy against true vals
     if (!is.null(true_vals)) {
-        # function to calculate rmse and mae
-        rmse_mae <- function(actual, predicted) {
-            rmse <- sqrt(mean((actual - predicted)^2))
-            mae <- mean(abs(actual - predicted))
-            return(list("rmse" = rmse, "mae" = mae))
-        }
-
         # extract true parameters
         c(
             true_x, true_lambda, true_zeros,
@@ -555,7 +554,7 @@ check_accuracy <- function(
         true_K <- ncol(true_lambda)
 
         # get correct dimensions from sampled parameters
-	# TODO adjust for new stable_K implementation
+	      # TODO adjust for new stable_K implementation
         K <- min(true_K, stable_K)
         lambda <- lambda[, 1:K]
         true_lambda <- true_lambda[, 1:K]
@@ -725,3 +724,53 @@ find_stable_dims <- function(zeros, n_dims, threshold = 0.5) {
   
   return(stable_K)
 }
+
+
+#' function to calculate rmse and mae
+#'
+#' @keywords internal
+rmse_mae <- function(actual, predicted) {
+  rmse <- sqrt(mean((actual - predicted)^2))
+  mae <- mean(abs(actual - predicted))
+  return(list("rmse" = rmse, "mae" = mae))
+}
+
+#' function to calculate geometric mean probability
+#' 
+#' @keywords internal
+# TODO find a way to deal with underflow
+# gmp <- function(dat, cutpoints) {
+#   # Calculate probability of observation
+#   probs <- cutpoints %>% 
+#     map(function(x){
+#       cuts <- c(-Inf, x)
+#       p <- c()
+#       for (i in 2:length(cuts)) {
+#         p[i-1] <- pnorm(cuts[i]) - pnorm(cuts[i-1])
+#       }
+#       log(p)
+#     })
+#   
+#   # Get observed values for each column
+#   probs_names <- apply(dat, 2, function(x) {
+#     sort(unique(x))
+#   })
+#   
+#   # combine probabilities with observed value
+#   probs <- map2(probs, probs_names, function(x, y) {
+#     names(x) <- y
+#     x
+#   })
+#   
+#   # Convert dat-cols into list
+#   dat_list <- lapply(seq_len(ncol(dat)), function(i) dat[, i])
+#   map2(probs, dat_list, function(x, y) {
+#     x[as.character(y)]
+#   }) %>% 
+#     bind_cols() %>% 
+#     apply(., 1, prod, na.rm = T) %>% 
+#     prod(., na.rm = T) %>% .^(1 / 7874)
+#     .^(1 / prod(dim(dat)))
+#   prod(probs[[1]][as.character(dat_votes$dmat[[1]][, 1])], na.rm = T)
+#   
+# }
