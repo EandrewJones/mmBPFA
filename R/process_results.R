@@ -533,7 +533,7 @@ check_accuracy <- function(
         rmse <- sqrt(mean((preds - dat)^2, na.rm = T))
     } else {
         accuracy <- sum(dat == preds, na.rm = T) / length(dat[!is.na(dat)])
-        c(rmse, mae) %<-% rmse_mae(actual = actual, predicted = predicted)
+        c(rmse, mae) %<-% rmse_mae(actual = dat, predicted = preds)
     }
 
     # store output
