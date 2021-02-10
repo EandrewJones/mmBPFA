@@ -534,14 +534,16 @@ check_accuracy <- function(
     } else {
         accuracy <- sum(dat == preds, na.rm = T) / length(dat[!is.na(dat)])
         c(rmse, mae) %<-% rmse_mae(actual = dat, predicted = preds)
+        gmp <- gmp(dat = dat, cutpoints = cutpoints)
     }
 
     # store output
     output_list <- list()
     output_list[["RMSE"]] <- rmse
     if (mode != 'mixed') {
-      output_list[['accuracy']] <- accuracy
+      output_list[['Accuracy']] <- accuracy
       output_list[['MAE']] <- mae
+      output_list[['GMP']] <- gmp
     }
 
     # check accuracy against true vals
@@ -738,39 +740,40 @@ rmse_mae <- function(actual, predicted) {
 #' function to calculate geometric mean probability
 #' 
 #' @keywords internal
-# TODO find a way to deal with underflow
-# gmp <- function(dat, cutpoints) {
-#   # Calculate probability of observation
-#   probs <- cutpoints %>% 
-#     map(function(x){
-#       cuts <- c(-Inf, x)
-#       p <- c()
-#       for (i in 2:length(cuts)) {
-#         p[i-1] <- pnorm(cuts[i]) - pnorm(cuts[i-1])
-#       }
-#       log(p)
-#     })
-#   
-#   # Get observed values for each column
-#   probs_names <- apply(dat, 2, function(x) {
-#     sort(unique(x))
-#   })
-#   
-#   # combine probabilities with observed value
-#   probs <- map2(probs, probs_names, function(x, y) {
-#     names(x) <- y
-#     x
-#   })
-#   
-#   # Convert dat-cols into list
-#   dat_list <- lapply(seq_len(ncol(dat)), function(i) dat[, i])
-#   map2(probs, dat_list, function(x, y) {
-#     x[as.character(y)]
-#   }) %>% 
-#     bind_cols() %>% 
-#     apply(., 1, prod, na.rm = T) %>% 
-#     prod(., na.rm = T) %>% .^(1 / 7874)
-#     .^(1 / prod(dim(dat)))
-#   prod(probs[[1]][as.character(dat_votes$dmat[[1]][, 1])], na.rm = T)
-#   
-# }
+gmp <- function(dat, cutpoints) {
+  # Calculate probability of observation
+  probs <- cutpoints %>%
+    map(function(x){
+      cuts <- c(-Inf, x)
+      p <- c()
+      for (i in 2:length(cuts)) {
+        p[i-1] <- pnorm(cuts[i]) - pnorm(cuts[i-1])
+      }
+      log(p)
+    })
+
+  # Get observed values for each column
+  probs_names <- apply(dat, 2, function(x) {
+    sort(unique(x))
+  })
+
+  # combine probabilities with observed value
+  probs <- map2(probs, probs_names, function(x, y) {
+    names(x) <- y
+    x
+  })
+
+  # Convert dat-cols into list
+  dat_list <- lapply(seq_len(ncol(dat)), function(i) dat[, i])
+  
+  # Calculate GMP with log-sum-exp
+  gmp <- map2(probs, dat_list, function(x, y) {
+    x[as.character(y)]
+  }) %>%
+    bind_cols() %>%
+    rowSums(., na.rm = T) %>% 
+    sum(., na.rm = T) %>% 
+    {. * (1 / prod(dim(dat)))} %>% 
+    exp()
+  return(gmp)
+}
