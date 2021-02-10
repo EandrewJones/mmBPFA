@@ -539,7 +539,7 @@ check_accuracy <- function(
     # store output
     output_list <- list()
     output_list[["RMSE"]] <- rmse
-    if (mode ! = 'mixed') {
+    if (mode != 'mixed') {
       output_list[['accuracy']] <- accuracy
       output_list[['MAE']] <- mae
     }
