@@ -8,7 +8,10 @@
 #'
 #' @keywords internal
 #'
-#' @param dat numeric data matrix; NA marks a missing cell.
+#' @param dat numeric data matrix (NA marks a missing cell), or a data frame in long
+#'   format with columns \code{row}, \code{col} and \code{value} (1-based indices),
+#'   one row per observed cell. Long format never builds the N x P matrix.
+#' @param n,p dimensions for long-format input; default to the largest indices.
 #'
 #' @return List with
 #'   \code{n}, \code{p};
@@ -18,15 +21,29 @@
 #'   \code{level_ptr}, \code{lvl_col_ptr}: level v of column j spans cells
 #'     \code{level_ptr[lvl_col_ptr[j] + v]} up to (not including) \code{level_ptr[lvl_col_ptr[j] + v + 1]};
 #'   \code{row_ptr}, \code{cell_of_row}: the cells of row i, as 0-based cell indices.
-prepare_data <- function(dat) {
-    dat <- as.matrix(dat)
-    if (!is.numeric(dat)) stop("All elements in the data must be numeric or integers")
-    n <- nrow(dat); p <- ncol(dat)
-    obs <- which(!is.na(dat))
-    row <- as.integer((obs - 1L) %% n)
-    col <- as.integer((obs - 1L) %/% n)
-    val <- as.numeric(dat[obs])
-    ord <- order(col, val)
+prepare_data <- function(dat, n = NULL, p = NULL) {
+    if (is.data.frame(dat) && all(c("row", "col", "value") %in% names(dat))) {
+        if (any(dat$row < 1 | dat$col < 1, na.rm = TRUE) || anyNA(dat$row) || anyNA(dat$col)) {
+            stop("row and col indices must be positive integers")
+        }
+        if (!is.numeric(dat$value) || anyNA(dat$value)) stop("value must be numeric with no missing entries")
+        if (is.null(n)) n <- max(dat$row)
+        if (is.null(p)) p <- max(dat$col)
+        if (anyDuplicated(data.frame(dat$row, dat$col))) stop("long-format data contain duplicate (row, col) cells")
+        row <- as.integer(dat$row) - 1L
+        col <- as.integer(dat$col) - 1L
+        val <- as.numeric(dat$value)
+    } else {
+        dat <- as.matrix(dat)
+        if (!is.numeric(dat)) stop("All elements in the data must be numeric or integers")
+        n <- nrow(dat); p <- ncol(dat)
+        obs <- which(!is.na(dat))
+        row <- as.integer((obs - 1L) %% n)
+        col <- as.integer((obs - 1L) %/% n)
+        val <- as.numeric(dat[obs])
+    }
+    n <- as.integer(n); p <- as.integer(p)
+    ord <- order(col, val, row)
     row <- row[ord]; col <- col[ord]; val <- val[ord]
     nnz <- length(val)
 

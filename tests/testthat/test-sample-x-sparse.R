@@ -95,3 +95,19 @@ test_that("a continuous column of 5000 rows costs O(n) per sweep", {
   expect_lt((proc.time()[["elapsed"]] - t0) / 10, 0.05)
 })
 
+
+test_that("long-format input (row, col, value) gives the same layout as a matrix", {
+  set.seed(5)
+  y <- matrix(rpois(30 * 8, 2), 30, 8); y[sample(length(y), 150)] <- NA
+  obs <- which(!is.na(y), arr.ind = TRUE)
+  long <- data.frame(row = obs[, 1], col = obs[, 2], value = y[obs])[sample(nrow(obs)), ]
+  expect_identical(prepare_data(long, n = 30, p = 8), prepare_data(y))
+})
+
+test_that("long-format input infers n and p, and rejects duplicates and bad indices", {
+  long <- data.frame(row = c(1, 3, 2), col = c(2, 1, 2), value = c(1, 0, 1))
+  d <- prepare_data(long)
+  expect_equal(c(d$n, d$p), c(3L, 2L))
+  expect_error(prepare_data(rbind(long, long[1, ])), "duplicate")
+  expect_error(prepare_data(data.frame(row = 0, col = 1, value = 1)), "positive")
+})

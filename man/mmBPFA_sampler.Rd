@@ -20,7 +20,8 @@ mmBPFA_sampler(
 )
 }
 \arguments{
-\item{dat}{Numeric data matrix (N x P); NA marks a missing cell.}
+\item{dat}{Numeric data matrix (N x P; NA marks a missing cell), or a data frame in long
+format with columns \code{row}, \code{col}, \code{value} (see \code{\link{prepare_data}}).}
 
 \item{priors}{A preset name or a list of prior settings; see \code{\link{resolve_priors}}.}
 

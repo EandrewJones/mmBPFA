@@ -10,7 +10,8 @@
 #' and are never imputed, so the cost of a sweep scales with the number of
 #' observed cells.
 #'
-#' @param dat Numeric data matrix (N x P); NA marks a missing cell.
+#' @param dat Numeric data matrix (N x P; NA marks a missing cell), or a data frame in long
+#'   format with columns \code{row}, \code{col}, \code{value} (see \code{\link{prepare_data}}).
 #' @param priors A preset name or a list of prior settings; see \code{\link{resolve_priors}}.
 #' @param H Truncation: maximum number of columns. Default min(floor((P - 1) / 2), 50).
 #' @param K_start Number of columns switched on at the start. Capped at H.

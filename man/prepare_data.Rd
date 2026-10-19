@@ -4,10 +4,14 @@
 \alias{prepare_data}
 \title{Compressed layout of the observed cells}
 \usage{
-prepare_data(dat)
+prepare_data(dat, n = NULL, p = NULL)
 }
 \arguments{
-\item{dat}{numeric data matrix; NA marks a missing cell.}
+\item{dat}{numeric data matrix (NA marks a missing cell), or a data frame in long
+format with columns \code{row}, \code{col} and \code{value} (1-based indices),
+one row per observed cell. Long format never builds the N x P matrix.}
+
+\item{n, p}{dimensions for long-format input; default to the largest indices.}
 }
 \value{
 List with
