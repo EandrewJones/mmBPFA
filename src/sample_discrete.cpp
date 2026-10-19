@@ -45,6 +45,11 @@ CellTerms cell_terms(double lo, double hi, double mu) {
     return t;
 }
 
+// Cutpoint prior when cut_sd <= 0: Dirichlet(1, ..., 1) on the item's marginal category
+// probabilities under x ~ N(0, s^2), s^2 = 1 + |lambda_j|^2, i.e. density prod phi(g_v / s) / s on
+// ordered g. Scale-coupled, so scaling lambda and g together is not rewarded.
+double dir_logprior(double G, int m, double s2) { return -0.5 * G / s2 - 0.5 * m * std::log(s2); }
+
 double cut_lo(const std::vector<double>& g, int off, int v) { return v == 0 ? R_NegInf : g[off + v - 1]; }
 double cut_hi(const std::vector<double>& g, int off, int v, int L) { return v == L - 1 ? R_PosInf : g[off + v]; }
 
@@ -98,7 +103,7 @@ double item_loglik(const Data& d, int j, const std::vector<double>& g, int off, 
 void set_cut_sd(double sd) { cut_sd = sd; }
 
 void draw_cutpoints(const Data& d, const Discrete& ds, const std::vector<double>& mu, std::vector<double>& g,
-                    double seed, double iter) {
+                    const arma::mat& lambda, double seed, double iter) {
     #pragma omp parallel for schedule(dynamic, 8) num_threads(num_threads())
     for (int j = 0; j < d.p; j++) {
         if (!ds.is_disc[j]) continue;
@@ -119,8 +124,15 @@ void draw_cutpoints(const Data& d, const Discrete& ds, const std::vector<double>
         }
         const double ll_cur = item_loglik(d, j, cur, 0, mu);
         const double ll_prop = item_loglik(d, j, prop, 0, mu);
-        double lp_cur = 0, lp_prop = 0;          // SPIKE: N(0, cut_sd^2) prior on each cutpoint
-        for (int v = 0; v < m; v++) { lp_cur -= 0.5 * cur[v] * cur[v] / (cut_sd * cut_sd); lp_prop -= 0.5 * prop[v] * prop[v] / (cut_sd * cut_sd); }
+        double lp_cur = 0, lp_prop = 0;
+        if (cut_sd > 0) {                        // SPIKE: N(0, cut_sd^2) prior on each cutpoint
+            for (int v = 0; v < m; v++) { lp_cur -= 0.5 * cur[v] * cur[v] / (cut_sd * cut_sd); lp_prop -= 0.5 * prop[v] * prop[v] / (cut_sd * cut_sd); }
+        } else {
+            const double s2 = 1 + arma::dot(lambda.row(j), lambda.row(j));
+            double Gc = 0, Gp = 0;
+            for (int v = 0; v < m; v++) { Gc += cur[v] * cur[v]; Gp += prop[v] * prop[v]; }
+            lp_cur = dir_logprior(Gc, m, s2); lp_prop = dir_logprior(Gp, m, s2);
+        }
         if (std::log(rng.unif()) < ll_prop + log_jac_prop + lp_prop - ll_cur - log_jac_cur - lp_cur)
             for (int v = 0; v < m; v++) g[off + v] = prop[v];
     }
@@ -155,9 +167,13 @@ void collapsed_loadings(const Data& d, const Discrete& ds, const std::vector<dou
         #pragma omp parallel for schedule(dynamic, 4) num_threads(num_threads()) reduction(+:acc_tot, try_tot)
         for (int j = 0; j < d.p; j++) {
             if (!ds.is_disc[j]) continue;
-            const int L = d.n_levels[j], off = ds.g_off[j];
+            const int L = d.n_levels[j], off = ds.g_off[j], m = L - 1;
             const double lam_cur = lambda(j, k);
-            // f(l) = sum log P(mu^{-k} + l w) and its derivatives
+            const bool dir = cut_sd <= 0;
+            double G = 0;
+            for (int v = 0; v < m; v++) G += g[off + v] * g[off + v];
+            const double c_rest = 1 + arma::dot(lambda.row(j), lambda.row(j)) - lam_cur * lam_cur;
+            // f(l) = sum log P(mu^{-k} + l w) (+ the cutpoint prior's dependence on l) and its derivatives
             auto eval = [&](double l, double& f, double& f1, double& f2) {
                 f = 0; f1 = 0; f2 = 0;
                 for (int v = 0; v < L; v++) {
@@ -167,6 +183,12 @@ void collapsed_loadings(const Data& d, const Discrete& ds, const std::vector<dou
                         const CellTerms t = cell_terms(lo, hi, mu[c] + (l - lam_cur) * w);
                         f += t.lp; f1 += t.d1 * w; f2 += t.d2 * w * w;
                     }
+                }
+                if (dir) {
+                    const double s2 = c_rest + l * l, a1 = G / (s2 * s2) - m / s2;
+                    f += dir_logprior(G, m, s2);
+                    f1 += l * a1;
+                    f2 += a1 + l * (-4 * l * G / (s2 * s2 * s2) + 2 * l * m / (s2 * s2));
                 }
             };
             double f, f1, f2;
@@ -224,7 +246,8 @@ void collapsed_loadings(const Data& d, const Discrete& ds, const std::vector<dou
 // [[Rcpp::export(name = ".collapsed_chain")]]
 arma::mat collapsed_chain(const Rcpp::List& data, arma::mat lambda, arma::imat z, const arma::mat& omega,
                           const arma::vec& rho, const arma::vec& theta, Rcpp::NumericVector g_in, int k,
-                          int max_levels, int n_iter, double seed) {
+                          int max_levels, int n_iter, double seed, double cut_sd_in) {
+    mosaicfa::set_cut_sd(cut_sd_in);
     const mosaicfa::Data d(data);
     const mosaicfa::Discrete ds(d, max_levels);
     std::vector<double> g(g_in.begin(), g_in.end());

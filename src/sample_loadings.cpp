@@ -194,6 +194,19 @@ Rcpp::List sample_loadings(const Rcpp::List& data, const Rcpp::NumericVector& x,
     const arma::vec theta_in = Rcpp::as<arma::vec>(state["theta"]);
     const int H = lambda.n_cols;
     const arma::mat omega_t = omega.t();
+    // SPIKE: items with explicit cutpoints under the Dirichlet cutpoint prior carry the factor
+    // exp(-G_j / (2 s_j^2)) s_j^(-m_j), s_j^2 = 1 + |lambda_j|^2; the Gaussian draw below is then a
+    // Metropolis proposal accepted with the ratio of these factors.
+    const bool has_cut = state.containsElementNamed("cut_G");
+    const Rcpp::NumericVector cut_G = has_cut ? Rcpp::NumericVector(state["cut_G"]) : Rcpp::NumericVector(0);
+    const Rcpp::IntegerVector cut_m = has_cut ? Rcpp::IntegerVector(state["cut_m"]) : Rcpp::IntegerVector(0);
+    auto keep_old = [&](int j, int k, double lam_new, double lam_old, mosaicfa::Rng& rng) {
+        if (!has_cut || cut_m[j] <= 0) return false;
+        const double rest = 1 + arma::dot(lambda.row(j), lambda.row(j)) - lam_old * lam_old;
+        const double s2n = rest + lam_new * lam_new, s2o = rest + lam_old * lam_old;
+        const double log_r = -0.5 * cut_G[j] * (1 / s2n - 1 / s2o) - 0.5 * cut_m[j] * (std::log(s2n) - std::log(s2o));
+        return std::log(rng.unif()) >= log_r;
+    };
 
     if (static_cast<double>(x.size()) == static_cast<double>(d.n) * d.p) {
         // Fully observed: dense residual E (N x P). For column k, the scores of all
@@ -217,8 +230,9 @@ Rcpp::List sample_loadings(const Rcpp::List& data, const Rcpp::NumericVector& x,
                 const double lo = logit_rho + 0.5 * (std::log(prior_prec) - std::log(prec)) + 0.5 * prec * mu * mu;
                 mosaicfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter),
                                 mosaicfa::stream_id(mosaicfa::KERNEL_LOADINGS, static_cast<uint64_t>(k) * d.p + j));
-                const int on = rng.unif() < inv_logit(lo);
-                const double lam = on ? mu + rng.norm() / std::sqrt(prec) : 0.0;
+                int on = rng.unif() < inv_logit(lo);
+                double lam = on ? mu + rng.norm() / std::sqrt(prec) : 0.0;
+                if (keep_old(j, k, lam, old[j], rng)) { lam = old[j]; on = z(j, k); }
                 z(j, k) = on;
                 lambda(j, k) = lam;
                 delta[j] = old[j] - lam;
@@ -254,8 +268,9 @@ Rcpp::List sample_loadings(const Rcpp::List& data, const Rcpp::NumericVector& x,
             const double lo = logit_rho + 0.5 * (std::log(prior_prec) - std::log(prec)) + 0.5 * prec * mu * mu;
             mosaicfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter),
                             mosaicfa::stream_id(mosaicfa::KERNEL_LOADINGS, static_cast<uint64_t>(k) * d.p + j));
-            const int on = rng.unif() < inv_logit(lo);
-            const double lam = on ? mu + rng.norm() / std::sqrt(prec) : 0.0;
+            int on = rng.unif() < inv_logit(lo);
+            double lam = on ? mu + rng.norm() / std::sqrt(prec) : 0.0;
+            if (keep_old(j, k, lam, lambda(j, k), rng)) { lam = lambda(j, k); on = z(j, k); }
             z(j, k) = on;
             lambda(j, k) = lam;
             if (lam != 0)

@@ -76,8 +76,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // collapsed_chain
-arma::mat collapsed_chain(const Rcpp::List& data, arma::mat lambda, arma::imat z, const arma::mat& omega, const arma::vec& rho, const arma::vec& theta, Rcpp::NumericVector g_in, int k, int max_levels, int n_iter, double seed);
-RcppExport SEXP _mosaicFA_collapsed_chain(SEXP dataSEXP, SEXP lambdaSEXP, SEXP zSEXP, SEXP omegaSEXP, SEXP rhoSEXP, SEXP thetaSEXP, SEXP g_inSEXP, SEXP kSEXP, SEXP max_levelsSEXP, SEXP n_iterSEXP, SEXP seedSEXP) {
+arma::mat collapsed_chain(const Rcpp::List& data, arma::mat lambda, arma::imat z, const arma::mat& omega, const arma::vec& rho, const arma::vec& theta, Rcpp::NumericVector g_in, int k, int max_levels, int n_iter, double seed, double cut_sd_in);
+RcppExport SEXP _mosaicFA_collapsed_chain(SEXP dataSEXP, SEXP lambdaSEXP, SEXP zSEXP, SEXP omegaSEXP, SEXP rhoSEXP, SEXP thetaSEXP, SEXP g_inSEXP, SEXP kSEXP, SEXP max_levelsSEXP, SEXP n_iterSEXP, SEXP seedSEXP, SEXP cut_sd_inSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -92,7 +92,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type max_levels(max_levelsSEXP);
     Rcpp::traits::input_parameter< int >::type n_iter(n_iterSEXP);
     Rcpp::traits::input_parameter< double >::type seed(seedSEXP);
-    rcpp_result_gen = Rcpp::wrap(collapsed_chain(data, lambda, z, omega, rho, theta, g_in, k, max_levels, n_iter, seed));
+    Rcpp::traits::input_parameter< double >::type cut_sd_in(cut_sd_inSEXP);
+    rcpp_result_gen = Rcpp::wrap(collapsed_chain(data, lambda, z, omega, rho, theta, g_in, k, max_levels, n_iter, seed, cut_sd_in));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -266,7 +267,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mosaicFA_rng_stream", (DL_FUNC) &_mosaicFA_rng_stream, 4},
     {"_mosaicFA_log_likelihood_from_x", (DL_FUNC) &_mosaicFA_log_likelihood_from_x, 4},
     {"_mosaicFA_run_chain", (DL_FUNC) &_mosaicFA_run_chain, 12},
-    {"_mosaicFA_collapsed_chain", (DL_FUNC) &_mosaicFA_collapsed_chain, 11},
+    {"_mosaicFA_collapsed_chain", (DL_FUNC) &_mosaicFA_collapsed_chain, 12},
     {"_mosaicFA_sample_column_indicators", (DL_FUNC) &_mosaicFA_sample_column_indicators, 6},
     {"_mosaicFA_sample_sticks", (DL_FUNC) &_mosaicFA_sample_sticks, 5},
     {"_mosaicFA_sample_a_cusp", (DL_FUNC) &_mosaicFA_sample_a_cusp, 5},

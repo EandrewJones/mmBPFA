@@ -132,7 +132,7 @@ Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List 
         if (ds.n_g > 0) {
             // x integrated out: cutpoints, then loadings of discrete items on active columns
             std::vector<double> mu = mosaicfa::cell_means(d, lambda, omega);
-            mosaicfa::draw_cutpoints(d, ds, mu, g, seed, t);
+            mosaicfa::draw_cutpoints(d, ds, mu, g, lambda, seed, t);
             arma::imat z = Rcpp::as<arma::imat>(state["z"]);
             const arma::ivec c = Rcpp::as<arma::ivec>(state["c"]);
             std::vector<int> cols;
@@ -145,6 +145,16 @@ Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List 
                                          Rcpp::as<arma::vec>(state["theta"]), cols, mu, seed, t, coll_acc, coll_try);
             state["lambda"] = lambda;
             state["z"] = z;
+            if (Rcpp::as<double>(prior["cut_sd"]) <= 0) {      // Dirichlet cutpoint prior: tell the DA step
+                Rcpp::NumericVector G(d.p, -1.0);
+                Rcpp::IntegerVector m(d.p, 0);
+                for (int j = 0; j < d.p; j++) {
+                    if (!ds.is_disc[j]) continue;
+                    m[j] = d.n_levels[j] - 1; G[j] = 0;
+                    for (int v = 0; v < m[j]; v++) G[j] += g[ds.g_off[j] + v] * g[ds.g_off[j] + v];
+                }
+                state["cut_G"] = G; state["cut_m"] = m;
+            }
             x = sample_x_sparse(data, x, lambda, omega, seed, t);
             mosaicfa::draw_x_discrete(d, ds, mu, g, x, seed, t);
         } else {

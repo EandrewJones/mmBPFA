@@ -42,8 +42,8 @@
 #' SPIKE test entry: apply the collapsed (z, lambda) update for column k (0-based) n_iter times
 #' with everything else fixed; returns the lambda draws of every item (P x n_iter).
 #' @keywords internal
-.collapsed_chain <- function(data, lambda, z, omega, rho, theta, g_in, k, max_levels, n_iter, seed) {
-    .Call(`_mosaicFA_collapsed_chain`, data, lambda, z, omega, rho, theta, g_in, k, max_levels, n_iter, seed)
+.collapsed_chain <- function(data, lambda, z, omega, rho, theta, g_in, k, max_levels, n_iter, seed, cut_sd_in) {
+    .Call(`_mosaicFA_collapsed_chain`, data, lambda, z, omega, rho, theta, g_in, k, max_levels, n_iter, seed, cut_sd_in)
 }
 
 #' Sample column indicators of the cumulative shrinkage prior (test entry point)

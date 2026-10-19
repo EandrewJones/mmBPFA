@@ -28,7 +28,7 @@ void set_cut_sd(double sd);
 std::vector<double> cell_means(const Data& d, const arma::mat& lambda, const arma::mat& omega);
 std::vector<double> initial_cutpoints(const Data& d, const Discrete& ds, const Rcpp::NumericVector& x);
 void draw_cutpoints(const Data& d, const Discrete& ds, const std::vector<double>& mu, std::vector<double>& g,
-                    double seed, double iter);
+                    const arma::mat& lambda, double seed, double iter);
 void draw_x_discrete(const Data& d, const Discrete& ds, const std::vector<double>& mu, const std::vector<double>& g,
                      Rcpp::NumericVector& x, double seed, double iter);
 void collapsed_loadings(const Data& d, const Discrete& ds, const std::vector<double>& g, arma::mat& lambda,
