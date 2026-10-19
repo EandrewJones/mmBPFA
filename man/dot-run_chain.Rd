@@ -15,7 +15,8 @@
   iter,
   thin,
   seed,
-  threads
+  threads,
+  moves
 )
 }
 \arguments{
@@ -34,6 +35,8 @@
 \item{seed}{chain seed.}
 
 \item{threads}{OpenMP threads used inside the chain.}
+
+\item{moves}{bit mask of extra scale moves: 1 item scale, 2 column scale.}
 }
 \value{
 List of kept draws and summaries.

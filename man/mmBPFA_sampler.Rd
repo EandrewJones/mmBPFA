@@ -16,7 +16,8 @@ mmBPFA_sampler(
   n_cores = 1,
   threads = 1,
   seed = 101473,
-  max_memory_gb = 4
+  max_memory_gb = 4,
+  moves = character()
 )
 }
 \arguments{
@@ -44,6 +45,10 @@ format with columns \code{row}, \code{col}, \code{value} (see \code{\link{prepar
 \item{seed}{Random seed; chain c uses \code{seed + c - 1}.}
 
 \item{max_memory_gb}{Stop before sampling if the kept draws would need more memory than this.}
+
+\item{moves}{Extra scale moves that leave the posterior unchanged but can speed up mixing:
+any of \code{"item_scale"} (rescale each item's latent values, loadings and intercept)
+and \code{"column_scale"} (trade scale between each column's loadings and scores).}
 }
 \value{
 Object of class \code{bpfa.results}: a list with one element per chain,

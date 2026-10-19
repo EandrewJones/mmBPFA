@@ -30,10 +30,11 @@
 #' @param warmup,iter,thin numbers of warmup and sampling iterations, and thinning.
 #' @param seed chain seed.
 #' @param threads OpenMP threads used inside the chain.
+#' @param moves bit mask of extra scale moves: 1 item scale, 2 column scale.
 #'
 #' @return List of kept draws and summaries.
-.run_chain <- function(data, x0, state0, omega0, alpha0, prior, warmup, iter, thin, seed, threads) {
-    .Call(`_mmBPFA_run_chain`, data, x0, state0, omega0, alpha0, prior, warmup, iter, thin, seed, threads)
+.run_chain <- function(data, x0, state0, omega0, alpha0, prior, warmup, iter, thin, seed, threads, moves) {
+    .Call(`_mmBPFA_run_chain`, data, x0, state0, omega0, alpha0, prior, warmup, iter, thin, seed, threads, moves)
 }
 
 #' Sample item intercepts from observed cells
@@ -121,6 +122,37 @@
 #' @return Updated state.
 .sample_loadings <- function(data, x, omega, alpha, state, prior, seed, iter) {
     .Call(`_mmBPFA_sample_loadings`, data, x, omega, alpha, state, prior, seed, iter)
+}
+
+#' Item scale move
+#'
+#' For each item j, (x_j, lambda_j, alpha_j) -> s_j (x_j, lambda_j, alpha_j). The ranks
+#' of x_j are unchanged, and s_j^2 ~ Gamma((n_j + m_j) / 2, A_j / 2) with
+#' A_j = sum_obs (x_ij - mu_ij)^2 + sum_k z_jk lambda_jk^2 / theta_k: the parameter-expanded
+#' data augmentation of Liu & Wu (1999) for probit models, per item.
+#'
+#' alpha_j is not identified under the rank likelihood (shifting x_j and alpha_j together
+#' changes nothing) and its flat prior makes that direction improper. The move must leave
+#' the proper posterior of x_j + alpha_j invariant, so alpha_j is scaled along but does not
+#' add to the Jacobian; counting it gives shape (n_j + m_j + 1) / 2 and the scales drift up.
+#'
+#' @keywords internal
+#'
+#' @return list with x, lambda, alpha and the scales s.
+.item_scale_move <- function(data, x, lambda, z, omega, alpha, theta, seed, iter) {
+    .Call(`_mmBPFA_item_scale_move`, data, x, lambda, z, omega, alpha, theta, seed, iter)
+}
+
+#' Column scale move
+#'
+#' For each column k, (lambda_k, omega_k) -> (s_k lambda_k, omega_k / s_k), which leaves
+#' Lambda Omega' unchanged; s_k^2 ~ GIG((m_k - N) / 2, sum_i omega_ik^2, sum_j lambda_jk^2 / theta_k).
+#'
+#' @keywords internal
+#'
+#' @return list with lambda, omega and the scales s.
+.column_scale_move <- function(lambda, z, omega, theta, seed, iter) {
+    .Call(`_mmBPFA_column_scale_move`, lambda, z, omega, theta, seed, iter)
 }
 
 #' Sample latent x for every observed cell

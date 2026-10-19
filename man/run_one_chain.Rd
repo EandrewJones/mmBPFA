@@ -4,7 +4,17 @@
 \alias{run_one_chain}
 \title{Run one chain from a seeded starting point}
 \usage{
-run_one_chain(data, prior, K_start, warmup, iter, thin, seed, threads = 1)
+run_one_chain(
+  data,
+  prior,
+  K_start,
+  warmup,
+  iter,
+  thin,
+  seed,
+  threads = 1,
+  moves = character()
+)
 }
 \description{
 Run one chain from a seeded starting point

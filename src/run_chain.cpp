@@ -87,12 +87,13 @@ double log_likelihood_from_x(const Rcpp::List& data, const Rcpp::NumericVector& 
 //' @param warmup,iter,thin numbers of warmup and sampling iterations, and thinning.
 //' @param seed chain seed.
 //' @param threads OpenMP threads used inside the chain.
+//' @param moves bit mask of extra scale moves: 1 item scale, 2 column scale.
 //'
 //' @return List of kept draws and summaries.
 // [[Rcpp::export(name = ".run_chain")]]
 Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List state0,
                      arma::mat omega0, arma::vec alpha0, const Rcpp::List& prior,
-                     int warmup, int iter, int thin, double seed, int threads) {
+                     int warmup, int iter, int thin, double seed, int threads, int moves) {
     mmbpfa::num_threads() = threads < 1 ? 1 : threads;
     const mmbpfa::Data d(data);
     Rcpp::NumericVector x = Rcpp::clone(x0);
@@ -116,6 +117,19 @@ Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List 
         lambda = Rcpp::as<arma::mat>(state["lambda"]);
         omega = sample_omega_sparse(data, x, lambda, alpha, seed, t);
         alpha = sample_alpha_sparse(data, x, lambda, omega, seed, t);
+        if (moves) {
+            const arma::imat z = Rcpp::as<arma::imat>(state["z"]);
+            const arma::vec theta = Rcpp::as<arma::vec>(state["theta"]);
+            if (moves & 1) {
+                Rcpp::List mv = item_scale_move(data, x, lambda, z, omega, alpha, theta, seed, t);
+                x = mv["x"]; lambda = Rcpp::as<arma::mat>(mv["lambda"]); alpha = Rcpp::as<arma::vec>(mv["alpha"]);
+            }
+            if (moves & 2) {
+                Rcpp::List mv = column_scale_move(lambda, z, omega, theta, seed, t);
+                lambda = Rcpp::as<arma::mat>(mv["lambda"]); omega = Rcpp::as<arma::mat>(mv["omega"]);
+            }
+            state["lambda"] = lambda;
+        }
 
         if (t > warmup && (t - warmup) % thin == 0 && kept < n_keep) {
             const arma::imat z = Rcpp::as<arma::imat>(state["z"]);

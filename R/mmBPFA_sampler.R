@@ -23,6 +23,9 @@
 #' @param threads Threads used inside each chain (OpenMP). Results do not depend on it.
 #' @param seed Random seed; chain c uses \code{seed + c - 1}.
 #' @param max_memory_gb Stop before sampling if the kept draws would need more memory than this.
+#' @param moves Extra scale moves that leave the posterior unchanged but can speed up mixing:
+#'   any of \code{"item_scale"} (rescale each item's latent values, loadings and intercept)
+#'   and \code{"column_scale"} (trade scale between each column's loadings and scores).
 #'
 #' @return Object of class \code{bpfa.results}: a list with one element per chain,
 #'   each holding the kept draws (\code{lambda}, \code{z}, \code{c}, \code{omega},
@@ -44,8 +47,10 @@ mmBPFA_sampler <- function(
     n_cores = 1,
     threads = 1,
     seed = 101473,
-    max_memory_gb = 4
+    max_memory_gb = 4,
+    moves = character()
     ) {
+    if (length(moves)) moves <- match.arg(moves, c("item_scale", "column_scale"), several.ok = TRUE)
     if (warmup < 0 || iter < 1 || thin < 1 || chains < 1) {
         stop("warmup must be >= 0, and iter, thin and chains must be positive")
     }
@@ -64,7 +69,7 @@ mmBPFA_sampler <- function(
                             "increase `thin`, reduce `iter`, or raise `max_memory_gb`."), gb, max_memory_gb))
     }
 
-    run <- function(chain) run_one_chain(data, prior, K_start, warmup, iter, thin, seed + chain - 1, threads)
+    run <- function(chain) run_one_chain(data, prior, K_start, warmup, iter, thin, seed + chain - 1, threads, moves)
     chain_out <- if (chains == 1 || n_cores == 1) {
         lapply(seq_len(chains), run)
     } else if (.Platform$OS.type == "windows") {
@@ -79,7 +84,7 @@ mmBPFA_sampler <- function(
         priors = prior,
         n = data$n, p = data$p, levels = level_values(data),
         warmup = warmup, iter = iter, thin = thin, chains = chains,
-        K_start = K_start, seed = seed
+        K_start = K_start, seed = seed, moves = moves
     )
 }
 
@@ -87,7 +92,7 @@ mmBPFA_sampler <- function(
 #' Run one chain from a seeded starting point
 #'
 #' @keywords internal
-run_one_chain <- function(data, prior, K_start, warmup, iter, thin, seed, threads = 1) {
+run_one_chain <- function(data, prior, K_start, warmup, iter, thin, seed, threads = 1, moves = character()) {
     set.seed(seed)
     H <- prior$H; p <- data$p; n <- data$n
     on <- seq_len(H) <= K_start
@@ -103,7 +108,8 @@ run_one_chain <- function(data, prior, K_start, warmup, iter, thin, seed, thread
         theta = ifelse(on, 1, prior$spike_var)
     )
     omega <- matrix(rnorm(n * H), n, H)
-    .run_chain(data, initial_x(data), state, omega, rep(0, p), prior, warmup, iter, thin, seed, threads)
+    .run_chain(data, initial_x(data), state, omega, rep(0, p), prior, warmup, iter, thin, seed, threads,
+               sum(c(item_scale = 1L, column_scale = 2L)[moves]))
 }
 
 
