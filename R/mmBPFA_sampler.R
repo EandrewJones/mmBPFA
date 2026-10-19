@@ -21,6 +21,7 @@
 #' @param n_cores Number of chains run in parallel.
 #' @param threads Threads used inside each chain (OpenMP). Results do not depend on it.
 #' @param seed Random seed; chain c uses \code{seed + c - 1}.
+#' @param max_memory_gb Stop before sampling if the kept draws would need more memory than this.
 #'
 #' @return Object of class \code{bpfa.results}: a list with one element per chain,
 #'   each holding the kept draws (\code{lambda}, \code{z}, \code{c}, \code{omega},
@@ -41,7 +42,8 @@ mmBPFA_sampler <- function(
     chains = 1,
     n_cores = 1,
     threads = 1,
-    seed = 101473
+    seed = 101473,
+    max_memory_gb = 4
     ) {
     if (warmup < 0 || iter < 1 || thin < 1 || chains < 1) {
         stop("warmup must be >= 0, and iter, thin and chains must be positive")
@@ -51,6 +53,14 @@ mmBPFA_sampler <- function(
     if (K_start > prior$H) {
         message(sprintf("K_start (%d) exceeds H (%d); using %d", as.integer(K_start), prior$H, prior$H))
         K_start <- prior$H
+    }
+
+    # kept draws store lambda and z (P x H), omega (N x H), alpha (P) and column vectors
+    H <- prior$H
+    gb <- 8 * chains * floor(iter / thin) * (2 * data$p * H + data$n * H + data$p + 3 * H) / 1e9
+    if (gb > max_memory_gb) {
+        stop(sprintf(paste0("Stored draws would need about %.2f GB (limit %.2f GB); ",
+                            "increase `thin`, reduce `iter`, or raise `max_memory_gb`."), gb, max_memory_gb))
     }
 
     run <- function(chain) run_one_chain(data, prior, K_start, warmup, iter, thin, seed + chain - 1, threads)

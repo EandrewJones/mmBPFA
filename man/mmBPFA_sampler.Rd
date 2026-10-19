@@ -15,7 +15,8 @@ mmBPFA_sampler(
   chains = 1,
   n_cores = 1,
   threads = 1,
-  seed = 101473
+  seed = 101473,
+  max_memory_gb = 4
 )
 }
 \arguments{
@@ -40,6 +41,8 @@ mmBPFA_sampler(
 \item{threads}{Threads used inside each chain (OpenMP). Results do not depend on it.}
 
 \item{seed}{Random seed; chain c uses \code{seed + c - 1}.}
+
+\item{max_memory_gb}{Stop before sampling if the kept draws would need more memory than this.}
 }
 \value{
 Object of class \code{bpfa.results}: a list with one element per chain,

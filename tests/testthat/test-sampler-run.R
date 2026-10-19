@@ -77,3 +77,10 @@ test_that("within-chain threads do not change the draws", {
     expect_identical(one[[1]]$log_lik, four[[1]]$log_lik)
   }
 })
+
+test_that("runs whose stored draws would exceed the memory limit stop before sampling", {
+  y <- small_binary()
+  expect_error(mmBPFA_sampler(y, iter = 1000, thin = 1, max_memory_gb = 1e-3),
+               "Stored draws would need about .* GB .*increase `thin`")
+  expect_silent(utils::capture.output(mmBPFA_sampler(y, warmup = 1, iter = 2, thin = 1, max_memory_gb = 1e-3)))
+})
