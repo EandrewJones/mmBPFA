@@ -55,3 +55,33 @@ test_that("an item with no observations gets alpha = 0 (flat prior, nothing to c
   expect_true(all(is.finite(a)))
   expect_equal(a[3], 0)
 })
+
+test_that("omega draws match the conditional when rows are fully observed or nearly so", {
+  for (miss in c(0, 0.03)) {
+    f <- sparse_fixture(n = 40, p = 12, miss = miss, empty_row = FALSE, seed = 5)
+    xm <- cells_to_matrix(f$d, f$x); K <- ncol(f$lam)
+    draws <- simplify2array(lapply(1:3000, function(t) .sample_omega_sparse(f$d, f$x, f$lam, f$al, 6, t)))
+    for (i in c(1, 20, 40)) {
+      o <- which(!is.na(f$y[i, ]))
+      S <- solve(crossprod(f$lam[o, , drop = FALSE]) + diag(K))
+      m <- S %*% crossprod(f$lam[o, , drop = FALSE], xm[i, o] + f$al[o])
+      expect_z(rowMeans(draws[i, , ]), as.vector(m), sqrt(diag(S) / 3000))
+      expect_rel(diag(cov(t(draws[i, , ]))), diag(S), 0.1)
+    }
+  }
+})
+
+test_that("omega costs O(N P H) on dense data and O(nnz H^2) on sparse data", {
+  skip_on_cran()
+  time_omega <- function(miss) {
+    set.seed(1); n <- 2000; p <- 200; H <- 30
+    y <- matrix(rbinom(n * p, 1, 0.5), n, p); y[matrix(runif(n * p) < miss, n, p)] <- NA
+    d <- prepare_data(y); x <- initial_x(d)
+    lam <- matrix(rnorm(p * H, 0, 0.3), p, H); al <- rnorm(p)
+    t0 <- proc.time()[["elapsed"]]
+    for (r in 1:5) .sample_omega_sparse(d, x, lam, al, 1, r)
+    (proc.time()[["elapsed"]] - t0) / 5
+  }
+  expect_lt(time_omega(0), 0.06)     # was 0.40 s
+  expect_lt(time_omega(0.9), 0.03)   # was 0.077 s
+})
