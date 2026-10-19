@@ -11,6 +11,34 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// rng_draws
+Rcpp::NumericVector rng_draws(std::string kind, int n, double seed, Rcpp::NumericVector params);
+RcppExport SEXP _mmBPFA_rng_draws(SEXP kindSEXP, SEXP nSEXP, SEXP seedSEXP, SEXP paramsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type kind(kindSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< double >::type seed(seedSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type params(paramsSEXP);
+    rcpp_result_gen = Rcpp::wrap(rng_draws(kind, n, seed, params));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rng_stream
+Rcpp::NumericVector rng_stream(double seed, double iter, double stream, int n);
+RcppExport SEXP _mmBPFA_rng_stream(SEXP seedSEXP, SEXP iterSEXP, SEXP streamSEXP, SEXP nSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type seed(seedSEXP);
+    Rcpp::traits::input_parameter< double >::type iter(iterSEXP);
+    Rcpp::traits::input_parameter< double >::type stream(streamSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    rcpp_result_gen = Rcpp::wrap(rng_stream(seed, iter, stream, n));
+    return rcpp_result_gen;
+END_RCPP
+}
 // sample_alpha
 arma::vec sample_alpha(const arma::mat& x, const arma::mat& lambda, const arma::mat& omega);
 RcppExport SEXP _mmBPFA_sample_alpha(SEXP xSEXP, SEXP lambdaSEXP, SEXP omegaSEXP) {
@@ -129,6 +157,8 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_mmBPFA_rng_draws", (DL_FUNC) &_mmBPFA_rng_draws, 4},
+    {"_mmBPFA_rng_stream", (DL_FUNC) &_mmBPFA_rng_stream, 4},
     {"_mmBPFA_sample_alpha", (DL_FUNC) &_mmBPFA_sample_alpha, 3},
     {"_mmBPFA_sample_gamma_k", (DL_FUNC) &_mmBPFA_sample_gamma_k, 4},
     {"_mmBPFA_sample_d", (DL_FUNC) &_mmBPFA_sample_d, 5},
