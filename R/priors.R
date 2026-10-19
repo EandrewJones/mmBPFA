@@ -27,7 +27,8 @@ resolve_priors <- function(priors = "uniform", p, H = NULL) {
         uniform = list(slab_shape = 1, slab_rate = 0.5),
         conservative = list(slab_shape = 1, slab_rate = 0.25)
     )
-    shared <- list(spike_var = 0.05, a_cusp_shape = 1, a_cusp_rate = 1, rho_a = 1, rho_b = 1)
+    shared <- list(spike_var = 0.05, a_cusp_shape = 1, a_cusp_rate = 1, rho_a = 1, rho_b = 1,
+                   cut_sd = 1e300)   # SPIKE: cutpoint prior sd (explicit-cutpoint items only)
 
     raw <- if (is.character(priors)) list(preset = priors) else as.list(priors)
     preset <- if (is.null(raw$preset)) "uniform" else raw$preset

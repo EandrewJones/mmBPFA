@@ -88,13 +88,14 @@ double log_likelihood_from_x(const Rcpp::List& data, const Rcpp::NumericVector& 
 //' @param seed chain seed.
 //' @param threads OpenMP threads used inside the chain.
 //' @param moves bit mask of extra scale moves: 1 item scale, 2 column scale.
+//' @param max_levels SPIKE: items with 2..max_levels levels get explicit cutpoints (0: off).
 //'
 //' @return List of kept draws and summaries. \code{threshold_draws} holds, for every kept draw,
 //'   the thresholds of items with at most 10 levels (rows in item order).
 // [[Rcpp::export(name = ".run_chain")]]
 Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List state0,
                      arma::mat omega0, const Rcpp::List& prior,
-                     int warmup, int iter, int thin, double seed, int threads, int moves) {
+                     int warmup, int iter, int thin, double seed, int threads, int moves, int max_levels) {
     mosaicfa::num_threads() = threads < 1 ? 1 : threads;
     const mosaicfa::Data d(data);
     Rcpp::NumericVector x = Rcpp::clone(x0);
@@ -118,11 +119,37 @@ Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List 
     }
     Rcpp::NumericMatrix keep_th(stored.size(), n_keep);
 
+    const mosaicfa::Discrete ds(d, max_levels);
+    mosaicfa::set_cut_sd(prior.containsElementNamed("cut_sd") ? Rcpp::as<double>(prior["cut_sd"]) : 1e300);
+    std::vector<double> g = mosaicfa::initial_cutpoints(d, ds, x);
+    std::vector<double> g_sum(ds.n_g, 0.0);
+    double coll_acc = 0, coll_try = 0;
+
     int kept = 0;
     const auto start = std::chrono::steady_clock::now();
     for (int t = 1; t <= warmup + iter; t++) {
         arma::mat lambda = Rcpp::as<arma::mat>(state["lambda"]);
-        x = sample_x_sparse(data, x, lambda, omega, seed, t);
+        if (ds.n_g > 0) {
+            // x integrated out: cutpoints, then loadings of discrete items on active columns
+            std::vector<double> mu = mosaicfa::cell_means(d, lambda, omega);
+            mosaicfa::draw_cutpoints(d, ds, mu, g, seed, t);
+            arma::imat z = Rcpp::as<arma::imat>(state["z"]);
+            const arma::ivec c = Rcpp::as<arma::ivec>(state["c"]);
+            std::vector<int> cols;
+            bool first_off = true;
+            for (int k = 0; k < (int) c.n_elem; k++) {
+                if (c[k] > k + 1) cols.push_back(k);
+                else if (first_off) { cols.push_back(k); first_off = false; }
+            }
+            mosaicfa::collapsed_loadings(d, ds, g, lambda, z, omega, Rcpp::as<arma::vec>(state["rho"]),
+                                         Rcpp::as<arma::vec>(state["theta"]), cols, mu, seed, t, coll_acc, coll_try);
+            state["lambda"] = lambda;
+            state["z"] = z;
+            x = sample_x_sparse(data, x, lambda, omega, seed, t);
+            mosaicfa::draw_x_discrete(d, ds, mu, g, x, seed, t);
+        } else {
+            x = sample_x_sparse(data, x, lambda, omega, seed, t);
+        }
         state = sample_loadings(data, x, omega, state, prior, seed, t);
         lambda = Rcpp::as<arma::mat>(state["lambda"]);
         omega = sample_omega_sparse(data, x, lambda, seed, t);
@@ -149,6 +176,7 @@ Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List 
             const std::vector<double> th = level_thresholds(d, x);
             if (th_sum.empty()) th_sum.assign(th.size(), 0.0);
             for (size_t i = 0; i < th.size(); i++) th_sum[i] += th[i];
+            for (int i = 0; i < ds.n_g; i++) g_sum[i] += g[i];
             for (size_t r = 0; r < stored.size(); r++) keep_th(r, kept) = th[stored[r]];
 
             keep_lambda[kept] = lambda;
@@ -165,6 +193,7 @@ Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List 
     }
     const double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
     for (double& v : th_sum) v /= std::max(kept, 1);
+    for (double& v : g_sum) v /= std::max(kept, 1);
 
     return Rcpp::List::create(
         Rcpp::Named("lambda") = keep_lambda, Rcpp::Named("z") = keep_z, Rcpp::Named("c") = keep_c,
@@ -172,5 +201,6 @@ Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List 
         Rcpp::Named("theta") = keep_theta, Rcpp::Named("a_cusp") = keep_a,
         Rcpp::Named("K") = keep_K, Rcpp::Named("log_lik") = keep_ll,
         Rcpp::Named("thresholds") = th_sum, Rcpp::Named("threshold_draws") = keep_th,
+        Rcpp::Named("cutpoints") = g_sum, Rcpp::Named("collapsed_accept") = coll_try > 0 ? coll_acc / coll_try : NA_REAL,
         Rcpp::Named("seconds_per_sweep") = seconds / (warmup + iter));
 }

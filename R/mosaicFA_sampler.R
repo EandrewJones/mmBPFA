@@ -49,7 +49,8 @@ mosaicFA_sampler <- function(
     threads = 1,
     seed = 101473,
     max_memory_gb = 4,
-    moves = character()
+    moves = character(),
+    discrete_levels = 0
     ) {
     if (length(moves)) moves <- match.arg(moves, c("item_scale", "column_scale"), several.ok = TRUE)
     if (warmup < 0 || iter < 1 || thin < 1 || chains < 1) {
@@ -72,7 +73,7 @@ mosaicFA_sampler <- function(
                             "increase `thin`, reduce `iter`, or raise `max_memory_gb`."), gb, max_memory_gb))
     }
 
-    run <- function(chain) run_one_chain(data, prior, K_start, warmup, iter, thin, seed + chain - 1, threads, moves)
+    run <- function(chain) run_one_chain(data, prior, K_start, warmup, iter, thin, seed + chain - 1, threads, moves, discrete_levels)
     chain_out <- if (chains == 1 || n_cores == 1) {
         lapply(seq_len(chains), run)
     } else if (.Platform$OS.type == "windows") {
@@ -95,7 +96,8 @@ mosaicFA_sampler <- function(
 #' Run one chain from a seeded starting point
 #'
 #' @keywords internal
-run_one_chain <- function(data, prior, K_start, warmup, iter, thin, seed, threads = 1, moves = character()) {
+run_one_chain <- function(data, prior, K_start, warmup, iter, thin, seed, threads = 1, moves = character(),
+                          discrete_levels = 0) {
     set.seed(seed)
     H <- prior$H; p <- data$p; n <- data$n
     on <- seq_len(H) <= K_start
@@ -112,7 +114,7 @@ run_one_chain <- function(data, prior, K_start, warmup, iter, thin, seed, thread
     )
     omega <- matrix(rnorm(n * H), n, H)
     .run_chain(data, initial_x(data), state, omega, prior, warmup, iter, thin, seed, threads,
-               sum(c(item_scale = 1L, column_scale = 2L)[moves]))
+               sum(c(item_scale = 1L, column_scale = 2L)[moves]), as.integer(discrete_levels))
 }
 
 

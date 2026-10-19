@@ -31,11 +31,19 @@
 #' @param seed chain seed.
 #' @param threads OpenMP threads used inside the chain.
 #' @param moves bit mask of extra scale moves: 1 item scale, 2 column scale.
+#' @param max_levels SPIKE: items with 2..max_levels levels get explicit cutpoints (0: off).
 #'
 #' @return List of kept draws and summaries. \code{threshold_draws} holds, for every kept draw,
 #'   the thresholds of items with at most 10 levels (rows in item order).
-.run_chain <- function(data, x0, state0, omega0, prior, warmup, iter, thin, seed, threads, moves) {
-    .Call(`_mosaicFA_run_chain`, data, x0, state0, omega0, prior, warmup, iter, thin, seed, threads, moves)
+.run_chain <- function(data, x0, state0, omega0, prior, warmup, iter, thin, seed, threads, moves, max_levels) {
+    .Call(`_mosaicFA_run_chain`, data, x0, state0, omega0, prior, warmup, iter, thin, seed, threads, moves, max_levels)
+}
+
+#' SPIKE test entry: apply the collapsed (z, lambda) update for column k (0-based) n_iter times
+#' with everything else fixed; returns the lambda draws of every item (P x n_iter).
+#' @keywords internal
+.collapsed_chain <- function(data, lambda, z, omega, rho, theta, g_in, k, max_levels, n_iter, seed) {
+    .Call(`_mosaicFA_collapsed_chain`, data, lambda, z, omega, rho, theta, g_in, k, max_levels, n_iter, seed)
 }
 
 #' Sample column indicators of the cumulative shrinkage prior (test entry point)

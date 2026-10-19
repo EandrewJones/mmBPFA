@@ -54,8 +54,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // run_chain
-Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List state0, arma::mat omega0, const Rcpp::List& prior, int warmup, int iter, int thin, double seed, int threads, int moves);
-RcppExport SEXP _mosaicFA_run_chain(SEXP dataSEXP, SEXP x0SEXP, SEXP state0SEXP, SEXP omega0SEXP, SEXP priorSEXP, SEXP warmupSEXP, SEXP iterSEXP, SEXP thinSEXP, SEXP seedSEXP, SEXP threadsSEXP, SEXP movesSEXP) {
+Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List state0, arma::mat omega0, const Rcpp::List& prior, int warmup, int iter, int thin, double seed, int threads, int moves, int max_levels);
+RcppExport SEXP _mosaicFA_run_chain(SEXP dataSEXP, SEXP x0SEXP, SEXP state0SEXP, SEXP omega0SEXP, SEXP priorSEXP, SEXP warmupSEXP, SEXP iterSEXP, SEXP thinSEXP, SEXP seedSEXP, SEXP threadsSEXP, SEXP movesSEXP, SEXP max_levelsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -70,7 +70,29 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< int >::type threads(threadsSEXP);
     Rcpp::traits::input_parameter< int >::type moves(movesSEXP);
-    rcpp_result_gen = Rcpp::wrap(run_chain(data, x0, state0, omega0, prior, warmup, iter, thin, seed, threads, moves));
+    Rcpp::traits::input_parameter< int >::type max_levels(max_levelsSEXP);
+    rcpp_result_gen = Rcpp::wrap(run_chain(data, x0, state0, omega0, prior, warmup, iter, thin, seed, threads, moves, max_levels));
+    return rcpp_result_gen;
+END_RCPP
+}
+// collapsed_chain
+arma::mat collapsed_chain(const Rcpp::List& data, arma::mat lambda, arma::imat z, const arma::mat& omega, const arma::vec& rho, const arma::vec& theta, Rcpp::NumericVector g_in, int k, int max_levels, int n_iter, double seed);
+RcppExport SEXP _mosaicFA_collapsed_chain(SEXP dataSEXP, SEXP lambdaSEXP, SEXP zSEXP, SEXP omegaSEXP, SEXP rhoSEXP, SEXP thetaSEXP, SEXP g_inSEXP, SEXP kSEXP, SEXP max_levelsSEXP, SEXP n_iterSEXP, SEXP seedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< arma::imat >::type z(zSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type omega(omegaSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type g_in(g_inSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< int >::type max_levels(max_levelsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_iter(n_iterSEXP);
+    Rcpp::traits::input_parameter< double >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(collapsed_chain(data, lambda, z, omega, rho, theta, g_in, k, max_levels, n_iter, seed));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -243,7 +265,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mosaicFA_rng_draws", (DL_FUNC) &_mosaicFA_rng_draws, 4},
     {"_mosaicFA_rng_stream", (DL_FUNC) &_mosaicFA_rng_stream, 4},
     {"_mosaicFA_log_likelihood_from_x", (DL_FUNC) &_mosaicFA_log_likelihood_from_x, 4},
-    {"_mosaicFA_run_chain", (DL_FUNC) &_mosaicFA_run_chain, 11},
+    {"_mosaicFA_run_chain", (DL_FUNC) &_mosaicFA_run_chain, 12},
+    {"_mosaicFA_collapsed_chain", (DL_FUNC) &_mosaicFA_collapsed_chain, 11},
     {"_mosaicFA_sample_column_indicators", (DL_FUNC) &_mosaicFA_sample_column_indicators, 6},
     {"_mosaicFA_sample_sticks", (DL_FUNC) &_mosaicFA_sample_sticks, 5},
     {"_mosaicFA_sample_a_cusp", (DL_FUNC) &_mosaicFA_sample_a_cusp, 5},
