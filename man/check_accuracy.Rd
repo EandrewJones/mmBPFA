@@ -4,7 +4,7 @@
 \alias{check_accuracy}
 \title{Function to check reconstruction accuracy}
 \usage{
-check_accuracy(dat, results, true_vals = NULL, mode, confusion = T)
+check_accuracy(dat, results, true_vals = NULL, confusion = T, return_preds = F)
 }
 \arguments{
 \item{dat}{Data matrix.}
@@ -13,9 +13,9 @@ check_accuracy(dat, results, true_vals = NULL, mode, confusion = T)
 
 \item{true_vals}{Optional list of true latent values from \code{generate_sim_data}.}
 
-\item{mode}{Margin type. Must be one of "fixed", "multi" or "mixed".}
-
 \item{confusion}{Boolean indicating whether to return a confusion matrix. Only works for "fixed" margin data.}
+
+\item{return_preds}{Boolean indicating whether to also return the predicted data matrix.}
 }
 \value{
 List of observed accuracy and accuracy metrics (rmse and mae). If confusion is TRUE, also returns confusion matrix results.

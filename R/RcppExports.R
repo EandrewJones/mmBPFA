@@ -21,12 +21,12 @@ sample_alpha <- function(x, lambda, omega) {
 #'
 #' @param zeros A binary, sparsity inducing matrix of dimenion P x K.
 #' @param lambda A standard multivariate normal matrix of factor loadings of dimension P x K.
-#' @param c A tunable hyperparameter for the shape parameter of the gamma draw. Default is 0.
+#' @param c A tunable hyperparameter for the shape parameter of the gamma draw. Default is 1, a proper prior that matches the shape used when sampling d.
 #' @param d A tunable hyperparameter for the inverse-scale (rate) parameter of the gamma draw. Default is 100
 #'
 #' @return gamma_k Numeric vector of factor precisions of length K.
 #'
-sample_gamma_k <- function(zeros, lambda, c = 0, d = 100) {
+sample_gamma_k <- function(zeros, lambda, c = 1, d = 100) {
     .Call(`_mmBPFA_sample_gamma_k`, zeros, lambda, c, d)
 }
 
@@ -75,6 +75,10 @@ sample_IBP_b <- function(ibp_a, ibp_b, zeros) {
     .Call(`_mmBPFA_sample_IBP_b`, ibp_a, ibp_b, zeros)
 }
 
+.feature_loglik_ratio <- function(e, lambda) {
+    .Call(`_mmBPFA_feature_loglik_ratio_r`, e, lambda)
+}
+
 #' Sampling step for lambda and binary, sparsity-inducing zero matrix
 #'
 #' @keywords internal
@@ -86,7 +90,7 @@ sample_IBP_b <- function(ibp_a, ibp_b, zeros) {
 #' @param alpha A numeric vector of item-intercepts of length P.
 #' @param gamma_k A numeric vector of factor precisions of length K.
 #' @param dc A integer vector of counts for the number of times each dimensions has been sampled.
-#' @param ibp_a A scalar double, Indian Buffet Process beta parameter.
+#' @param ibp_a A scalar double, Indian Buffet Process alpha parameter.
 #' @param ibp_b A scalar double, Indian Buffet Process beta parameter.
 #' @param tau A tunable hyperparameter for the poisson draws of new dishes to be sampled.
 #' @param sparse A boolean indicating whether to include sparsity-inducing prior.

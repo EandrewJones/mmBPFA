@@ -26,7 +26,7 @@ sample_x(dat, mode, d_mask, n_levels, margin_vals, x, lambda, alpha, omega)
 \item{omega}{N x K matrix of factor scores.}
 }
 \value{
-List of x matrix and cutpoints.
+List of x matrix and cutpoints (the lower and upper truncation bounds used for each cell).
 }
 \description{
 sample X values according to Hoff (2007) and Murray et al. (2013) extended rank likelihood approach

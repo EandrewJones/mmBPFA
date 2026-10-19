@@ -61,10 +61,5 @@ arma::mat sample_omega(
             omega_out.row(i) = omega::rmvnorm(1, omega_mu.col(i), omega_var);
         }
 
-        // normalize omega
-        for (int k = 0; k < K; k++) {
-            omega_out.col(k) = (omega_out.col(k) - arma::mean(omega_out.col(k))) / arma::stddev(omega_out.col(k));
-        }
-
         return omega_out;
 }

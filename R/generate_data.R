@@ -69,7 +69,7 @@ generate_sim_data <- function(
     t_lambda <- matrix(
         nrow = p,
         ncol = K_true,
-        rnorm(p * K_true, mean = 0, sd = 1 / t_gamma_k),
+        rnorm(p * K_true, mean = 0, sd = 1 / sqrt(t_gamma_k)),
         byrow = T
     )
 
@@ -77,7 +77,8 @@ generate_sim_data <- function(
     if (!is.null(sparsity)) {
         t_pi_k <- sparsity
     } else {
-        t_pi_k <- rbeta(K_true, a / K_true, b * (K_true - 1) / K_true)
+        # finite approximation to the two-parameter IBP
+        t_pi_k <- rbeta(K_true, a * b / K_true, b)
     }
 
     # generate sparsity matrix
@@ -90,8 +91,6 @@ generate_sim_data <- function(
 
     # induce sparsity
     t_lambda <- t_lambda * t_zero
-    lambda_rsums <- sqrt(1 + apply(t_lambda^2, 1, sum))
-    t_lambda <- t_lambda / lambda_rsums
 
     # generate lambda
     t_omega <- matrix(
@@ -110,7 +109,7 @@ generate_sim_data <- function(
         rep(t_alpha, n),
         byrow = T
     )
-    t_aug <- t(t_lambda %*% t(t_omega)) - t_am
+    t_aug <- t(t_lambda %*% t(t_omega)) - t_am + matrix(rnorm(n * p), nrow = n, ncol = p)
 
     # copula transformation from normal margins to uniform margins
     uniform_margins <- pnorm(t_aug)

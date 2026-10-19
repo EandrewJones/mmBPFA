@@ -39,11 +39,12 @@ arma::vec sample_alpha(
         // sample
         arma::mat pred_vals = trans(lambda * omega.t());
         arma::mat resids = pred_vals - x;
-        arma::vec mean_resids = (1 / n) * alpha::colSums(resids);
-        arma::vec sd_resids(p), alpha_out(p);
+        // flat prior and unit noise variance: alpha_j | -- ~ N(mean_resids_j, 1 / n)
+        arma::vec mean_resids = alpha::colSums(resids) / n;
+        const double sd_alpha = sqrt(1.0 / n);
+        arma::vec alpha_out(p);
         for (int j = 0; j < p; j++) {
-            sd_resids(j) = sqrt(var(resids.col(j)) / n);
-            alpha_out(j) = R::rnorm(mean_resids(j), sd_resids(j));
+            alpha_out(j) = R::rnorm(mean_resids(j), sd_alpha);
         }
         return alpha_out;
 }

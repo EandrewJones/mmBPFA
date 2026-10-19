@@ -62,16 +62,12 @@ remove_weakly_active <- function(
     m_k <- colSums(zeros)
     keep <- which(dc >= 10 & m_k > (0.01 * dim(zeros)[1]))
 
-    if (length(keep) == 0) {
-        t <- 0
-        c <- 10
-        while (t == 0) {
-            c <- c - 1
-            keep <- which(dc >= c & m_k > (0.01 * dim(zeros)[1]))
-            if (length(keep) != 0) {
-                t <- t + 1
-            }
-        }
+    # relax the age requirement, but never the loading requirement; if no
+    # dimension qualifies the draw has zero active dimensions
+    min_age <- 10
+    while (length(keep) == 0 && min_age > 0) {
+        min_age <- min_age - 1
+        keep <- which(dc >= min_age & m_k > (0.01 * dim(zeros)[1]))
     }
 
     # store outputs

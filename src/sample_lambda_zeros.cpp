@@ -2,6 +2,20 @@
 #include <RcppArmadillo.h>
 using namespace Rcpp;
 
+// Log likelihood ratio of adding features with loadings `lambda` to a variable with
+// residuals `e`, integrating out the new factor scores g_i ~ N(0, I):
+// -N/2 log(1 + |lambda|^2) + |lambda|^2 / (2 (1 + |lambda|^2)) * sum(e^2)
+double feature_loglik_ratio(const arma::vec& e, const arma::vec& lambda) {
+    if (lambda.n_elem == 0) return 0;
+    const double s = arma::dot(lambda, lambda);
+    return -0.5 * e.n_elem * std::log1p(s) + 0.5 * s / (1 + s) * arma::dot(e, e);
+}
+
+// [[Rcpp::export(name = ".feature_loglik_ratio")]]
+double feature_loglik_ratio_r(const arma::vec& e, const arma::vec& lambda) {
+    return feature_loglik_ratio(e, lambda);
+}
+
 //' Sampling step for lambda and binary, sparsity-inducing zero matrix
 //'
 //' @keywords internal
@@ -73,26 +87,37 @@ List sample_lambda_and_zeros(
             // calculate mu for dimension k
             mu_k = (1 / gam_ks(k)) * (omega.col(k).t() * resids);
 
+            // number of variables currently loading on feature k
+            double m_k = sum(new_zeros.col(k));
+
             // sample current features
             for (int j = 0; j < p; j++) {
-                // number of features
-                int m_jk = sum(new_zeros.col(k)) - new_zeros(j, k);
-
-                // switch for sparsity inducing prior
-                if (sparse == true) {
-                    log_rp = log(m_jk) - log(p - m_jk - 1);
+                // without the beta-process prior every loading is active
+                if (sparse == false) {
+                    new_lambda(j, k) = R::rnorm(mu_k(j), sqrt(1 / gam_ks(k)));
+                    new_zeros(j, k) = 1;
+                    continue;
                 }
 
-                // Beta prior (constrain large values to avoid NaNs)
+                // number of other variables loading on feature k
+                int m_jk = m_k - new_zeros(j, k);
+
+                // singletons are resampled by the new-feature step instead
+                if (m_jk == 0) continue;
+
+                // two-parameter IBP prior odds
+                log_rp = log(m_jk) - log(p + ibp_b - 1 - m_jk);
+
+                // log posterior odds of z_jk = 1
                 log_p1 = 0.5 * (log(gamma_k(k)) - log(gam_ks(k))) +
                          (0.5 * gam_ks(k) * pow(mu_k(j), 2.0)) +
                          log_rp;
-                if (log_p1 < -10) {
-                    log_p1 = -10;
-                } else if (log_p1 > 10) {
-                    log_p1 = 10;
+                // numerically stable inverse logit
+                if (log_p1 >= 0) {
+                    p1 = 1 / (1 + exp(-log_p1));
+                } else {
+                    p1 = exp(log_p1) / (1 + exp(log_p1));
                 }
-                p1 = 1 / (1 + exp(-log_p1));
 
                 // Bernoulli prior
                 zero_jk = R::rbinom(1, p1);
@@ -100,94 +125,65 @@ List sample_lambda_and_zeros(
                 // sample lambda_jk according to zero_jk
                 lambda_jk = zero_jk * R::rnorm(mu_k(j), sqrt(1 / gam_ks(k)));
                 new_lambda(j, k) = lambda_jk;
+                m_k += zero_jk - new_zeros(j, k);
                 new_zeros(j, k) = zero_jk;
             }
         }
 
-        // sample new features
+        // propose new features (Knowles and Ghahramani 2011): for each variable j,
+        // replace its current singleton features with kappa ~ Pois(tau * nu) new ones
         if (infinite == true) {
-            // sample new possible new dimensions
-            double prior_exp = (ibp_a * ibp_b) / (ibp_b + p - 1);
-            arma::vec pois_draws = rpois(p, tau * prior_exp), K_new(p);
-            for (int j = 0; j < p; j++)
-            {
-                if (R::runif(0, 1) < 0.9)
-                {
-                    K_new(j) = pois_draws(j);
-                }
-                else
-                {
-                    K_new(j) = 1;
-                }
-            }
+            const double nu = (ibp_a * ibp_b) / (ibp_b + p - 1);
+            const arma::rowvec m_k = arma::sum(new_zeros, 0);
+            std::vector<int> new_rows;
+            std::vector<double> new_vals;
 
-            // initialize new feature matrices
-            arma::mat add_lambda(p, max(K_new), arma::fill::zeros);
-            arma::mat add_zeros(p, max(K_new), arma::fill::zeros);
-
-            // get number of new samples for row j
             for (int j = 0; j < p; j++) {
-                if (K_new(j) > 0)
-                {
-                    // calculate residuals for feature j
-                    arma::vec resids_j = x.col(j) - trans(new_lambda.row(j) * omega.t()) +
-                                         alpha_mat.col(j);
+                // current singletons of variable j
+                arma::uvec single = arma::find((new_zeros.row(j) == 1) % (m_k == 1));
+                arma::rowvec shared_lambda = new_lambda.row(j);
+                arma::vec old_lambda = shared_lambda.elem(single);
 
-                    // calculate MH log likelihood
-                    arma::mat I(K_new(j), K_new(j), arma::fill::eye);
-                    arma::vec prop_lambda = Rcpp::rnorm(K_new(j), 0, 1);
-                    arma::mat M = prop_lambda * prop_lambda.t() + I;
-                    arma::mat mn = M.i() * prop_lambda * resids_j.t();
-                    double log_al = (0.5 * n * K_new(j) * log(2 * M_PI)) +
-                                    (0.5 * n * log(det(M))) -
-                                    (0.5 * sum(diagvec((mn.t() * M) * mn)));
+                // residuals excluding the singletons
+                shared_lambda.elem(single).zeros();
+                arma::vec resids_j = x.col(j) - omega * shared_lambda.t() + alpha_mat.col(j);
 
+                // proposal
+                const int kappa_old = single.n_elem;
+                const int kappa_new = R::rpois(tau * nu);
+                arma::vec prop_lambda = Rcpp::as<arma::vec>(Rcpp::rnorm(kappa_new, 0, 1));
 
-                    // calculate MH prior
-                    double log_ap = R::dpois(K_new(j), prior_exp, TRUE) -
-                                    R::dpois(K_new(j), tau * prior_exp, TRUE);
+                double log_acc = feature_loglik_ratio(resids_j, prop_lambda) -
+                                 feature_loglik_ratio(resids_j, old_lambda) +
+                                 R::dpois(kappa_new, nu, true) - R::dpois(kappa_old, nu, true) +
+                                 R::dpois(kappa_old, tau * nu, true) - R::dpois(kappa_new, tau * nu, true);
 
-                    // MH acceptance rate
-                    double log_acc = log_al + log_ap;
-
-                    // MH step
-                    if (log_acc > 0) {
-                        // always accept
-                        add_zeros(j, arma::span(0, K_new(j) - 1)) = arma::ones<arma::rowvec>(K_new(j));
-                        add_lambda(j, arma::span(0, K_new(j) - 1)) = prop_lambda.t();
-                    } else if (log_acc > -10) {
-                        // MH draw if acceptance rate is not unreasonably low
-                        if (R::runif(0, 1) < exp(log_acc)) {
-                            add_zeros(j, arma::span(0, K_new(j) - 1)) = arma::ones<arma::rowvec>(K_new(j));
-                            add_lambda(j, arma::span(0, K_new(j) - 1)) = prop_lambda.t();
-                        }
+                if (log(R::runif(0, 1)) < log_acc) {
+                    for (arma::uword c = 0; c < single.n_elem; c++) {
+                        new_zeros(j, single(c)) = 0;
+                        new_lambda(j, single(c)) = 0;
+                    }
+                    for (int c = 0; c < kappa_new; c++) {
+                        new_rows.push_back(j);
+                        new_vals.push_back(prop_lambda(c));
                     }
                 }
             }
-            // concatenate new features to matrices
+
+            // each accepted new feature gets its own column
+            const int n_new = new_rows.size();
+            arma::mat add_lambda(p, n_new, arma::fill::zeros);
+            arma::mat add_zeros(p, n_new, arma::fill::zeros);
+            for (int c = 0; c < n_new; c++) {
+                add_zeros(new_rows[c], c) = 1;
+                add_lambda(new_rows[c], c) = new_vals[c];
+            }
             new_lambda = arma::join_rows(new_lambda, add_lambda);
             new_zeros = arma::join_rows(new_zeros, add_zeros);
 
             // extend dc length by new features
-            std::vector<int> add_dc(max(K_new), 0);
-            dc.reserve(dc.size() + add_dc.size());
-            dc.insert(dc.end(), add_dc.begin(), add_dc.end());
+            dc.insert(dc.end(), n_new, 0);
         }
-
-
-        // Normalize lambda
-        K = new_lambda.n_cols;
-        arma::vec lambda_sum(p);
-        for (int j = 0; j < p; j++) {
-            double total = 0;
-            for (int k = 0; k < K; k++) {
-                total += pow(new_lambda(j, k), 2.0);
-            }
-            lambda_sum(j) = total;
-        }
-        arma::mat lambda_denom(p, K);
-        lambda_denom.each_col() = sqrt(1 + lambda_sum);
-        new_lambda = new_lambda / lambda_denom;
 
         // update dc
          for (int& i : dc)

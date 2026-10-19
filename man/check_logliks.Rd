@@ -5,13 +5,13 @@
 \title{Function to examine posterior log-Likelihoods}
 \usage{
 check_logliks(
-  log_liks,
+  results,
   probs = c(0.05, 0.1, 0.2, 0.5, 0.8, 0.9, 0.95),
   plot = TRUE
 )
 }
 \arguments{
-\item{log_liks}{A numeric vector of posterior draws from mmBPFA sampler. Must not be processed.}
+\item{results}{processed results from \code{process_results}.}
 
 \item{probs}{A numeric vector of quantiles to display for log-likelihoods distribution. Default is c(0.05, 0.1, 0.2, 0.5, 0.8, 0.9, 0.95).}
 

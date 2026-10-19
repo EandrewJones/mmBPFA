@@ -120,47 +120,35 @@ mmBPFA_sampler <- function(
             )
         }
     } else {
-        # Determine parallel implementation based on OS
-        sys_name <- unname(Sys.info()[1])
-
-        # Use snow functionality for windows
-        if (grepl("windows", sys_name)) {
-            # make cluster
-            cl <- parallel::makeCluster(n_cores)
-            parallel::clusterExport(cl, ls(.GlobalEnv))
-            junk <- parallel::clusterEvalQ(cl, expr = {library(mmBFPA)})
-
-            # set seeds
-            parallel::clusterSetRNGStream(cl, 123)
-
-            # run sampler
-            chain_out <- parallel::parLapply(
-                cl,
-                X = seq_len(chains),
-                fun = chain_call,
-                pre_sparse = pre_sparse,
-                warmup = warmup,
-                iter = iter,
-                thin = thin,
-                dat = dat,
-                mode = mode,
-                share_noise = share_noise,
-                d_mask = d_mask,
-                n_levels = n_levels,
-                margin_vals = margin_vals,
-                x = x,
-                lambda = lambda,
-                zeros = zeros,
-                omega = omega,
-                alpha = alpha,
-                gamma_k = gamma_k,
-                d = d,
-                dc = dc,
-                ibp_a = ibp_a,
-                ibp_b = ibp_b,
-                benchmark = benchmark
+        # forked processes are unavailable on Windows; use a socket cluster there
+        if (.Platform$OS.type == "windows") {
+            chain_out <- run_chains_psock(
+                chains = chains,
+                n_cores = n_cores,
+                chain_args = list(
+                    pre_sparse = pre_sparse,
+                    warmup = warmup,
+                    iter = iter,
+                    thin = thin,
+                    dat = dat,
+                    mode = mode,
+                    share_noise = share_noise,
+                    d_mask = d_mask,
+                    n_levels = n_levels,
+                    margin_vals = margin_vals,
+                    x = x,
+                    lambda = lambda,
+                    zeros = zeros,
+                    omega = omega,
+                    alpha = alpha,
+                    gamma_k = gamma_k,
+                    d = d,
+                    dc = dc,
+                    ibp_a = ibp_a,
+                    ibp_b = ibp_b,
+                    benchmark = benchmark
+                )
             )
-            stopCluster(cl)
         } else {
             # set RNG
             RNGkind("L'Ecuyer-CMRG")
@@ -211,6 +199,34 @@ mmBPFA_sampler <- function(
     attr(chain_out, "n_cores") <- n_cores
     attr(chain_out, "benchmark") <- benchmark
     return(chain_out)
+}
+
+
+#' Run chains on a socket cluster
+#'
+#' Used for parallel chains on Windows, where forking is unavailable.
+#'
+#' @keywords internal
+#'
+#' @param chains Number of chains.
+#' @param n_cores Number of worker processes.
+#' @param chain_args Named list of arguments passed to \code{chain_call}.
+#'
+#' @return List with one \code{chain_call} result per chain.
+run_chains_psock <- function(chains, n_cores, chain_args) {
+    cl <- parallel::makeCluster(n_cores)
+    on.exit(parallel::stopCluster(cl), add = TRUE)
+    parallel::clusterEvalQ(cl, library(mmBPFA))
+
+    # independent streams seeded from the caller's RNG state
+    parallel::clusterSetRNGStream(cl, sample.int(.Machine$integer.max, 1))
+
+    parallel::parLapply(
+        cl,
+        X = seq_len(chains),
+        fun = function(chain, args) do.call(chain_call, args),
+        args = chain_args
+    )
 }
 
 
@@ -343,7 +359,7 @@ chain_call <- function(
     # initialize new progress bar
     print(paste("Beginning main sampling phase. Will run for", iter, "steps."))
     pb <- utils::txtProgressBar(min = 0, max = iter, style = 3)
-    print_k <- floor(iter / 70)
+    print_k <- max(1, floor(iter / 70))
 
     # initialize benchmark container
     if (benchmark)  mcmc_time_log <- tibble::tibble("time" = list(NA), .rows = iter)
@@ -522,6 +538,7 @@ sampler_phase  <- function(
     gamma_k <- sample_gamma_k(
         zeros = zeros,
         lambda = lambda,
+        c = 1,
         d = d
     )
     if (benchmark) tictoc::toc(log = T, quiet = T)
@@ -554,7 +571,8 @@ sampler_phase  <- function(
             k_lambda = k_lambda,
             k_omega = k_omega,
             alpha = alpha,
-            dat = dat
+            dat = dat,
+            thresholds = estimate_thresholds(x, dat)
         )
         n_active_dims <- ncol(k_lambda)
     }

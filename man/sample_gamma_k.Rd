@@ -4,14 +4,14 @@
 \alias{sample_gamma_k}
 \title{Sampling step for gamma_k (factor precisions)}
 \usage{
-sample_gamma_k(zeros, lambda, c = 0, d = 100)
+sample_gamma_k(zeros, lambda, c = 1, d = 100)
 }
 \arguments{
 \item{zeros}{A binary, sparsity inducing matrix of dimenion P x K.}
 
 \item{lambda}{A standard multivariate normal matrix of factor loadings of dimension P x K.}
 
-\item{c}{A tunable hyperparameter for the shape parameter of the gamma draw. Default is 0.}
+\item{c}{A tunable hyperparameter for the shape parameter of the gamma draw. Default is 1, a proper prior that matches the shape used when sampling d.}
 
 \item{d}{A tunable hyperparameter for the inverse-scale (rate) parameter of the gamma draw. Default is 100}
 }

@@ -23,7 +23,7 @@ namespace local {
 //'
 //' @param zeros A binary, sparsity inducing matrix of dimenion P x K.
 //' @param lambda A standard multivariate normal matrix of factor loadings of dimension P x K.
-//' @param c A tunable hyperparameter for the shape parameter of the gamma draw. Default is 0.
+//' @param c A tunable hyperparameter for the shape parameter of the gamma draw. Default is 1, a proper prior that matches the shape used when sampling d.
 //' @param d A tunable hyperparameter for the inverse-scale (rate) parameter of the gamma draw. Default is 100
 //'
 //' @return gamma_k Numeric vector of factor precisions of length K.
@@ -32,7 +32,7 @@ namespace local {
 arma::vec sample_gamma_k(
     const arma::mat& zeros,
     const arma::mat& lambda,
-    const double c = 0,
+    const double c = 1,
     const double d = 100
     ) {
         // get dimensions
@@ -42,12 +42,12 @@ arma::vec sample_gamma_k(
         const arma::vec m_k = local::colSums(zeros);
 
         // sample
-        const arma::vec sum_l2 = local::colSums(pow(lambda, 2.0));
+        const arma::vec sum_l2 = local::colSums(zeros % pow(lambda, 2.0));
         arma::vec gamma_k_out(K);
         for (int k = 0; k < K; k++) {
             gamma_k_out(k) = R::rgamma(
                 c + (m_k(k) / 2),
-                1 / (sum_l2(k) + d));
+                1 / (0.5 * sum_l2(k) + d));
         }
 
         return gamma_k_out;

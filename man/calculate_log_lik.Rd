@@ -2,9 +2,9 @@
 % Please edit documentation in R/calculate_loglik.R
 \name{calculate_log_lik}
 \alias{calculate_log_lik}
-\title{calculate log-likelihood by integrating over the posterior distribution}
+\title{calculate log-likelihood of the observed data at a posterior draw}
 \usage{
-calculate_log_lik(k_lambda, k_omega, alpha, dat)
+calculate_log_lik(k_lambda, k_omega, alpha, dat, thresholds)
 }
 \arguments{
 \item{k_lambda}{stored lambda matrix from mcmc iteration.}
@@ -14,11 +14,13 @@ calculate_log_lik(k_lambda, k_omega, alpha, dat)
 \item{alpha}{stored alpha vector from mcmc iteration.}
 
 \item{dat}{data matrix.}
+
+\item{thresholds}{list of per-column thresholds, e.g. from \code{estimate_thresholds}.}
 }
 \value{
 log-likelihood
 }
 \description{
-calculate log-likelihood by integrating over the posterior distribution
+calculate log-likelihood of the observed data at a posterior draw
 }
 \keyword{internal}

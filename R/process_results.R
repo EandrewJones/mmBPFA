@@ -21,7 +21,7 @@ process_results <- function(
     if (class(mcmc_object) != "bpfa.results") stop("mcmc_object must be the output of bpfa sampling run.")
     
     # extract results
-    if (attributes(mcmc_object)$parallel) {
+    if (attributes(mcmc_object)$chains > 1) {
         n_dims <- do.call(c, purrr::map(mcmc_object, ~ .x[["Number of Dimensions"]]))
         log_liks <- do.call(c, purrr::map(mcmc_object, ~ .x[["Log-Likelihoods"]]))
         results <- do.call(rbind, purrr::map(mcmc_object, ~ .x[["MCMC Results"]]))
@@ -37,7 +37,17 @@ process_results <- function(
     
     # Process n_dims
     median_K <- median(n_dims)
-    stable_K <- find_stable_dims(zeros = zeros, n_dims = n_dims)
+
+    # resolve label switching: match every draw's dimensions to a pivot draw
+    # with the median number of dimensions
+    pivot <- which.min(abs(n_dims - median_K))
+    perms <- align_dimensions(zeros, pivot = pivot)
+    stable_K <- find_stable_dims(perms)
+    copula_lambda <- purrr::map2(lambda, perms, ~ (.x / sqrt(1 + rowSums(.x^2)))[, .y, drop = FALSE])
+    zeros <- purrr::map2(zeros, perms, ~ .x[, .y, drop = FALSE])
+    lambda <- purrr::map2(lambda, perms, ~ .x[, .y, drop = FALSE])
+    omega <- purrr::map2(omega, perms, ~ .x[, .y, drop = FALSE])
+    gamma_k <- purrr::map2(gamma_k, perms, ~ .x[.y])
     
     out_msg <- paste(
       "The sampler discovered", median_K, "dimensions (median),", length(stable_K), 
@@ -58,7 +68,7 @@ process_results <- function(
     
     # 1) zeros
     zero_csums_array <- t(abind::abind(purrr::map(zeros, ~ .x[, stable_K, drop = FALSE] %>% colSums()), along = 2))
-    zero_csums_mean <- colMeans(zero_csums_array)
+    zero_csums_mean <- colMeans(zero_csums_array, na.rm = TRUE)
     dim_order <- order(zero_csums_mean, decreasing = T)
     
     # 2) lambda (matrix)
@@ -70,6 +80,15 @@ process_results <- function(
         se = SE
     )
     
+    # 2b) lambda on the copula correlation scale (matrix)
+    copula_lambda_out <- extract_omega_lambda_mean_se(
+        x = copula_lambda,
+        dim_order = dim_order,
+        stable_K = stable_K,
+        p = p,
+        se = SE
+    )
+
     # 3) omega (matrix)
     omega_out <- extract_omega_lambda_mean_se(
         x = omega,
@@ -101,10 +120,10 @@ process_results <- function(
     # 4) process gamma_k
     gamma_k_mat <- do.call(cbind, purrr::map(gamma_k, ~ .x[stable_K]))
     if (length(stable_K) > 1) gamma_k_mat <- gamma_k_mat[dim_order, ]
-    gamma_k_mean <- rowMeans(gamma_k_mat)
+    gamma_k_mean <- rowMeans(gamma_k_mat, na.rm = TRUE)
     gamma_k_out <- round(gamma_k_mean, 7)
     if (SE) {
-        se_mat <- apply(gamma_k_mat, 1, quantile, p = p)
+        se_mat <- apply(gamma_k_mat, 1, quantile, p = p, na.rm = TRUE)
         se_long <- t(se_mat)
         gamma_k_out <- cbind(1:length(gamma_k_mean), gamma_k_mean, se_long)
         names(gamma_k_out) <- c("row", "mean", paste0("ci_", p[1]), paste0("ci_", p[2]))
@@ -123,13 +142,10 @@ process_results <- function(
         c("a", "b"),
         function(x) {
             cutpoint_array <- abind::abind(purrr::map(cutpoints, ~ .x[[x]]), along = 3)
-            cutpoint_mean <- apply(cutpoint_array, 1:2, mean, simplify = FALSE)
-            cutpoint_mean <- apply(cutpoint_mean, 2, unique)
-            if (mode == "fixed") {
-                tibble::as_tibble(cutpoint_mean, .name_repair = "minimal")
-            } else {
-                cutpoint_mean
-            }
+            cutpoint_mean <- apply(cutpoint_array, 1:2, mean)
+            # one vector of distinct bounds per column (apply() would simplify
+            # to a matrix when every column has the same number of levels)
+            lapply(seq_len(ncol(cutpoint_mean)), function(j) unique(cutpoint_mean[, j]))
         }
     )
     a_sort <- purrr::map(a_mean, ~ sort(.x)[-1])
@@ -141,6 +157,7 @@ process_results <- function(
     output_list[["Stable Dimensions"]] <- stable_K
     output_list[["Median Number Dimensions"]] <- median_K
     output_list[["Factor Loadings"]] <- lambda_out
+    output_list[["Copula Loadings"]] <- copula_lambda_out
     output_list[["Factor Scores"]] <- omega_out
     output_list[["Factor Precisions"]] <- gamma_k_out
     output_list[["Item-level Intercepts"]] <- alpha_out
@@ -165,7 +182,7 @@ process_results <- function(
 #     if (class(mcmc_object) != "bpfa.results") stop("mcmc_object must be the output of bpfa sampling run.")
 # 
 #     # extract results
-#     if (attributes(mcmc_object)$parallel) {
+#     if (attributes(mcmc_object)$chains > 1) {
 #         n_dims <- do.call(c, purrr::map(mcmc_object, ~ .x[["Number of Dimensions"]]))
 #         log_liks <- do.call(c, purrr::map(mcmc_object, ~ .x[["Log-Likelihoods"]]))
 #         results <- do.call(rbind, purrr::map(mcmc_object, ~ .x[["MCMC Results"]]))
@@ -305,7 +322,7 @@ process_results <- function(
 #' @keywords internal
 destructure.mcmc.output.processed <- function(x) {
     list(
-        x[[1]], x[[2]], x[[3]], x[[4]], x[[5]], x[[6]], x[[7]], x[[8]]
+        x[[1]], x[[2]], x[[3]], x[[4]], x[[5]], x[[6]], x[[7]], x[[8]], x[[9]]
     )
 }
 
@@ -328,7 +345,7 @@ process_benchmarks <- function(mcmc_object) {
     }
 
     # get benchmarks
-    if (attributes(mcmc_object)$parallel) {
+    if (attributes(mcmc_object)$chains > 1) {
         unzip_benchmarks <- purrr::map(mcmc_object, ~ .x[["Benchmarks"]])
         pre_sparse_benchmarks <- purrr::map(unzip_benchmarks, ~ .x$pre_sparse) %>%
             do.call(rbind, .)
@@ -404,7 +421,7 @@ process_benchmarks <- function(mcmc_object) {
 #' \code{check_logliks} ingests the raw vector of posterior log-likelihoods and returns quantiles of interests, the mean, and
 #' a plot of the distribution if \code{plot = TRUE}. A well-behaving posterior distribution should be unimodal and peak at the mean.
 #'
-#' @param log_liks A numeric vector of posterior draws from mmBPFA sampler. Must not be processed.
+#' @param results processed results from \code{process_results}.
 #' @param probs A numeric vector of quantiles to display for log-likelihoods distribution. Default is c(0.05, 0.1, 0.2, 0.5, 0.8, 0.9, 0.95).
 #' @param plot A boolean indicating whether to plot the log-likelihood distribution. Default is TRUE.
 #' 
@@ -464,14 +481,13 @@ check_logliks <- function(
 #' @param dat Data matrix.
 #' @param results processed results from \code{process_results}. Must not include standard errors.
 #' @param true_vals Optional list of true latent values from \code{generate_sim_data}.
-#' @param mode Margin type. Must be one of "fixed", "multi" or "mixed".
 #' @param confusion Boolean indicating whether to return a confusion matrix. Only works for "fixed" margin data.
+#' @param return_preds Boolean indicating whether to also return the predicted data matrix.
 #' 
 #' @return List of observed accuracy and accuracy metrics (rmse and mae). If confusion is TRUE, also returns confusion matrix results.
 #' 
 #' @export
 #' 
-# TODO implement geometric mean probability
 check_accuracy <- function(
     dat,
     results,
@@ -509,7 +525,9 @@ check_accuracy <- function(
 
     # predict y
     cutpoints <- results[["Cutpoints"]]
-    c(..., n_levels, margin_vals) %<-% calculate_d_mask(dat = dat, mode = mode)
+    margins <- calculate_d_mask(dat = dat, mode = mode)
+    n_levels <- margins[["n_levels"]]
+    margin_vals <- margins[["margin_vals"]]
     if (mode == "fixed") {
         preds <- purrr::pmap(
             list(x_tbl, cutpoints),
@@ -534,7 +552,7 @@ check_accuracy <- function(
     } else {
         accuracy <- sum(dat == preds, na.rm = T) / length(dat[!is.na(dat)])
         c(rmse, mae) %<-% rmse_mae(actual = dat, predicted = preds)
-        gmp <- gmp(dat = dat, cutpoints = cutpoints)
+        gmp <- gmp(dat = dat, pred = x, cutpoints = cutpoints)
     }
 
     # store output
@@ -556,8 +574,7 @@ check_accuracy <- function(
         true_K <- ncol(true_lambda)
 
         # get correct dimensions from sampled parameters
-	      # TODO adjust for new stable_K implementation
-        K <- min(true_K, stable_K)
+        K <- min(true_K, length(stable_K))
         lambda <- lambda[, 1:K]
         true_lambda <- true_lambda[, 1:K]
         omega <- omega[, 1:K]
@@ -639,10 +656,10 @@ extract_omega_lambda_mean_se <- function(
     if (length(stable_K) > 1) {
         x_array <- abind::abind(purrr::map(x, ~ .x[, stable_K]), along = 3)
         x_array <- x_array[, dim_order, ]
-        x_mean <- apply(x_array, 1:2, mean, simplify = F)
+        x_mean <- apply(x_array, 1:2, mean, na.rm = TRUE)
     } else {
         x_array <- abind::abind(purrr::map(x, ~ .x[, stable_K]), along = 2)
-        x_mean <- rowMeans(x_array)
+        x_mean <- rowMeans(x_array, na.rm = TRUE)
     }
     
     
@@ -653,7 +670,7 @@ extract_omega_lambda_mean_se <- function(
     # Add standard errors
     if (se) {
         if (length(stable_K) > 1) {
-            se_array <- apply(x_array, 1:2, quantile, p = p, simplify = F)
+            se_array <- apply(x_array, 1:2, quantile, p = p, na.rm = TRUE)
             se_perm <- aperm(se_array, c(2, 3, 1))
             se_long <- apply(se_perm, 3, matrix, nrow = prod(dim(se_perm)[1:2]), ncol = 1)
             x_mean_long <- matrix(x_mean, nrow = prod(dim(x_mean)), ncol = 1)
@@ -665,7 +682,7 @@ extract_omega_lambda_mean_se <- function(
             x_out$dimension <- rep(1:length(stable_K), each = nrow(x_mean))
             x_out <- dplyr::select(x_out, dimension, dplyr::everything())
         } else {
-            se_array <- apply(x_array, 1, quantile, p = p, simplify = F)
+            se_array <- apply(x_array, 1, quantile, p = p, na.rm = TRUE)
             x_out <- tibble::as_tibble(
                 cbind(x_mean, t(se_array)),
                 .name_repair = 'minimal'
@@ -698,33 +715,46 @@ extract_omega_lambda_mean_se <- function(
     return(x_out)
 }
 
-#' function to identify stable dimensions from sampling run
-#' 
-#' @keywords internal 
-find_stable_dims <- function(zeros, n_dims, threshold = 0.5) {
-  
-  # Sort zeros vector using euclidean distance between
-  stable_init <- min(n_dims) 
-  zeros_list <- purrr::map(zeros, ~ .x[, 1:stable_init, drop=FALSE] %>% t())
-  zeros_lead <- zeros_list[-1]
-  zeros_lag <- zeros_list[-length(zeros_list)]
-  zeros_order <- map2(zeros_lag, zeros_lead, 
-                      ~ rdist::cdist(X = .x, Y = .y, 'euclidean') %>% 
-                        apply(., 1, which.min)
-  ) %>% 
-    do.call(rbind, .)
-  
-  # Calculate stability via entropy
-  zeros_median <- zeros_order %>% apply(., 2, median)
-  zeros_entropy <- zeros_order %>% apply(., 2, function(x) {
-    p <- table(x) / length(x)
-    -sum(p*log(p))
+#' match each draw's dimensions to those of a pivot draw
+#'
+#' Dimensions are paired greedily by the Euclidean distance between their
+#' sparsity patterns, closest pairs first.
+#'
+#' @keywords internal
+#'
+#' @param zeros list of P x K binary matrices, one per draw.
+#' @param pivot index of the reference draw.
+#'
+#' @return list of integer vectors, one per draw, giving for each pivot dimension
+#' the matching column of that draw (NA when the draw has no dimension left to match).
+align_dimensions <- function(zeros, pivot) {
+  ref <- zeros[[pivot]]
+  purrr::map(zeros, function(z) {
+    perm <- rep(NA_integer_, ncol(ref))
+    if (ncol(z) == 0 || ncol(ref) == 0) return(perm)
+    dist <- rdist::cdist(t(ref), t(z), "euclidean")
+    for (step in seq_len(min(ncol(ref), ncol(z)))) {
+      best <- which(dist == min(dist), arr.ind = TRUE)[1, ]
+      perm[best[1]] <- best[2]
+      dist[best[1], ] <- Inf
+      dist[, best[2]] <- Inf
+    }
+    perm
   })
-  
-  # Keep dimensions below stability threshold
-  stable_K <- which(zeros_entropy < threshold)
-  
-  return(stable_K)
+}
+
+
+#' function to identify stable dimensions from sampling run
+#'
+#' @keywords internal
+#'
+#' @param perms list of pivot-to-draw matchings from \code{align_dimensions}.
+#' @param threshold minimum share of draws in which a pivot dimension must be present.
+#'
+#' @return indices of the stable pivot dimensions.
+find_stable_dims <- function(perms, threshold = 0.5) {
+  matched <- do.call(rbind, purrr::map(perms, ~ !is.na(.x)))
+  which(colMeans(matched) >= threshold)
 }
 
 
@@ -740,40 +770,8 @@ rmse_mae <- function(actual, predicted) {
 #' function to calculate geometric mean probability
 #' 
 #' @keywords internal
-gmp <- function(dat, cutpoints) {
-  # Calculate probability of observation
-  probs <- cutpoints %>%
-    map(function(x){
-      cuts <- c(-Inf, x)
-      p <- c()
-      for (i in 2:length(cuts)) {
-        p[i-1] <- pnorm(cuts[i]) - pnorm(cuts[i-1])
-      }
-      log(p)
-    })
-
-  # Get observed values for each column
-  probs_names <- apply(dat, 2, function(x) {
-    sort(unique(x))
-  })
-
-  # combine probabilities with observed value
-  probs <- map2(probs, probs_names, function(x, y) {
-    names(x) <- y
-    x
-  })
-
-  # Convert dat-cols into list
-  dat_list <- lapply(seq_len(ncol(dat)), function(i) dat[, i])
-  
-  # Calculate GMP with log-sum-exp
-  gmp <- map2(probs, dat_list, function(x, y) {
-    x[as.character(y)]
-  }) %>%
-    bind_cols() %>%
-    rowSums(., na.rm = T) %>% 
-    sum(., na.rm = T) %>% 
-    {. * (1 / prod(dim(dat)))} %>% 
-    exp()
-  return(gmp)
+gmp <- function(dat, pred, cutpoints) {
+  # geometric mean probability of the observed cells: exp(mean log probability)
+  log_probs <- cell_log_probs(pred, dat, cutpoints)
+  exp(mean(log_probs, na.rm = TRUE))
 }

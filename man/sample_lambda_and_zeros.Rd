@@ -34,7 +34,7 @@ sample_lambda_and_zeros(
 
 \item{dc}{A integer vector of counts for the number of times each dimensions has been sampled.}
 
-\item{ibp_a}{A scalar double, Indian Buffet Process beta parameter.}
+\item{ibp_a}{A scalar double, Indian Buffet Process alpha parameter.}
 
 \item{ibp_b}{A scalar double, Indian Buffet Process beta parameter.}
 

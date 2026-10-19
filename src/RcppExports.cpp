@@ -6,6 +6,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // sample_alpha
 arma::vec sample_alpha(const arma::mat& x, const arma::mat& lambda, const arma::mat& omega);
 RcppExport SEXP _mmBPFA_sample_alpha(SEXP xSEXP, SEXP lambdaSEXP, SEXP omegaSEXP) {
@@ -75,6 +80,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// feature_loglik_ratio_r
+double feature_loglik_ratio_r(const arma::vec& e, const arma::vec& lambda);
+RcppExport SEXP _mmBPFA_feature_loglik_ratio_r(SEXP eSEXP, SEXP lambdaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::vec& >::type e(eSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type lambda(lambdaSEXP);
+    rcpp_result_gen = Rcpp::wrap(feature_loglik_ratio_r(e, lambda));
+    return rcpp_result_gen;
+END_RCPP
+}
 // sample_lambda_and_zeros
 List sample_lambda_and_zeros(arma::mat x, arma::mat lambda, arma::mat zeros, arma::mat omega, arma::vec alpha, arma::vec gamma_k, std::vector<int> dc, const double ibp_a, const double ibp_b, const double tau, const bool sparse, const bool infinite);
 RcppExport SEXP _mmBPFA_sample_lambda_and_zeros(SEXP xSEXP, SEXP lambdaSEXP, SEXP zerosSEXP, SEXP omegaSEXP, SEXP alphaSEXP, SEXP gamma_kSEXP, SEXP dcSEXP, SEXP ibp_aSEXP, SEXP ibp_bSEXP, SEXP tauSEXP, SEXP sparseSEXP, SEXP infiniteSEXP) {
@@ -117,6 +134,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mmBPFA_sample_d", (DL_FUNC) &_mmBPFA_sample_d, 5},
     {"_mmBPFA_sample_IBP_a", (DL_FUNC) &_mmBPFA_sample_IBP_a, 4},
     {"_mmBPFA_sample_IBP_b", (DL_FUNC) &_mmBPFA_sample_IBP_b, 3},
+    {"_mmBPFA_feature_loglik_ratio_r", (DL_FUNC) &_mmBPFA_feature_loglik_ratio_r, 2},
     {"_mmBPFA_sample_lambda_and_zeros", (DL_FUNC) &_mmBPFA_sample_lambda_and_zeros, 12},
     {"_mmBPFA_sample_omega", (DL_FUNC) &_mmBPFA_sample_omega, 3},
     {NULL, NULL, 0}
