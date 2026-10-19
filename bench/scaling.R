@@ -1,9 +1,9 @@
-# Sweep-time scaling of mmBPFA_sampler() across N, P, sparsity and threads.
+# Sweep-time scaling of mosaicFA_sampler() across N, P, sparsity and threads.
 # Usage: Rscript bench/scaling.R [output.csv]
 # Data are drawn from the model (K = 5, binary) directly in long format, so
 # sparse settings never build the N x P matrix. Time per sweep is measured
 # inside the chain, so data preparation and starting values are excluded.
-suppressMessages(library(mmBPFA))
+suppressMessages(library(mosaicFA))
 
 simulate_long <- function(n, p, sparsity, K = 5, seed = 1) {
   set.seed(seed)
@@ -17,7 +17,7 @@ simulate_long <- function(n, p, sparsity, K = 5, seed = 1) {
 }
 
 sweep_seconds <- function(long, n, p, threads, sweeps = 10) {
-  utils::capture.output(r <- mmBPFA_sampler(long, H = 30, K_start = 10, warmup = sweeps, iter = 1, thin = 1,
+  utils::capture.output(r <- mosaicFA_sampler(long, H = 30, K_start = 10, warmup = sweeps, iter = 1, thin = 1,
                                             threads = threads, max_memory_gb = 64))
   r[[1]]$seconds_per_sweep        # timed inside the chain, so data preparation is excluded
 }

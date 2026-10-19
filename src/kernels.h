@@ -1,6 +1,6 @@
 // Declarations of the sampler kernels, so the chain driver can call them directly.
-#ifndef MMBPFA_KERNELS_H
-#define MMBPFA_KERNELS_H
+#ifndef MOSAICFA_KERNELS_H
+#define MOSAICFA_KERNELS_H
 
 #include <RcppArmadillo.h>
 

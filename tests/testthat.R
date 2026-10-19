@@ -1,4 +1,4 @@
 library(testthat)
-library(mmBPFA)
+library(mosaicFA)
 
-test_check("mmBPFA")
+test_check("mosaicFA")

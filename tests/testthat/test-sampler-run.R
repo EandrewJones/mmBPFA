@@ -1,6 +1,6 @@
 quiet_run <- function(...) {
   out <- NULL
-  utils::capture.output(out <- mmBPFA_sampler(...))
+  utils::capture.output(out <- mosaicFA_sampler(...))
   out
 }
 
@@ -11,7 +11,7 @@ small_binary <- function(seed = 1, n = 60, p = 40) {
 test_that("the sampler stores one draw per kept iteration with the documented shapes", {
   res <- quiet_run(small_binary(), K_start = 5, warmup = 5, iter = 20, thin = 2, seed = 1)
   ch <- res[[1]]
-  expect_s3_class(res, "bpfa.results")
+  expect_s3_class(res, "mosaicfa.results")
   expect_length(ch$K, 10)
   expect_length(ch$log_lik, 10)
   expect_equal(dim(ch$lambda[[1]]), c(40L, 19L))     # H = min(floor(39 / 2), 50)
@@ -58,10 +58,10 @@ test_that("forked parallel chains match sequential chains for the same seed", {
 })
 
 test_that("socket-cluster chains (the Windows path) run", {
-  skip_if_not("mmBPFA" %in% rownames(utils::installed.packages()), "workers need the installed package")
+  skip_if_not("mosaicFA" %in% rownames(utils::installed.packages()), "workers need the installed package")
   y <- small_binary()
   out <- run_chains_psock(chains = 2, n_cores = 2,
-                          chain_fun = function(chain) mmBPFA:::run_one_chain(prepare_data(y),
+                          chain_fun = function(chain) mosaicFA:::run_one_chain(prepare_data(y),
                             resolve_priors("uniform", ncol(y)), 4, 3, 6, 1, 3 + chain))
   expect_length(out, 2)
 })
@@ -80,9 +80,9 @@ test_that("within-chain threads do not change the draws", {
 
 test_that("runs whose stored draws would exceed the memory limit stop before sampling", {
   y <- small_binary()
-  expect_error(mmBPFA_sampler(y, iter = 1000, thin = 1, max_memory_gb = 1e-3),
+  expect_error(mosaicFA_sampler(y, iter = 1000, thin = 1, max_memory_gb = 1e-3),
                "Stored draws would need about .* GB .*increase `thin`")
-  expect_silent(utils::capture.output(mmBPFA_sampler(y, warmup = 1, iter = 2, thin = 1, max_memory_gb = 1e-3)))
+  expect_silent(utils::capture.output(mosaicFA_sampler(y, warmup = 1, iter = 2, thin = 1, max_memory_gb = 1e-3)))
 })
 
 test_that("each chain reports its sampling time per sweep", {

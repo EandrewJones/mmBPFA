@@ -1,4 +1,4 @@
-#' Process results from an mmBPFA sampling run
+#' Process results from an mosaicFA sampling run
 #'
 #' \code{process_results} pools the kept draws of all chains and returns
 #' posterior summaries of the counted dimensions: columns that are switched on
@@ -11,7 +11,7 @@
 #' here use only the counted dimensions. "Uncounted Correlation Share" reports
 #' how much of the copula correlation the uncounted columns carry.
 #'
-#' @param mcmc_object Output of \code{mmBPFA_sampler} (class \code{bpfa.results}).
+#' @param mcmc_object Output of \code{mosaicFA_sampler} (class \code{mosaicfa.results}).
 #' @param SE Whether to add credible intervals.
 #' @param p Lower and upper probabilities of the credible intervals.
 #' @param to_tibble Whether to return tibbles.
@@ -24,7 +24,7 @@
 #'
 #' @export
 process_results <- function(mcmc_object, SE = TRUE, p = c(0.05, 0.95), to_tibble = TRUE) {
-    if (!inherits(mcmc_object, "bpfa.results")) stop("mcmc_object must be the output of mmBPFA_sampler().")
+    if (!inherits(mcmc_object, "mosaicfa.results")) stop("mcmc_object must be the output of mosaicFA_sampler().")
     H <- attr(mcmc_object, "priors")$H
     n_chains <- length(mcmc_object)
 
@@ -165,7 +165,7 @@ pooled_cutpoints <- function(mcmc_object) {
 #'
 #' @keywords internal
 #'
-#' @param mcmc_object output of \code{mmBPFA_sampler}.
+#' @param mcmc_object output of \code{mosaicFA_sampler}.
 #' @param p lower and upper probabilities of the credible intervals, or NULL for none.
 #'
 #' @return tibble with one row per threshold: item, the values on either side, mean

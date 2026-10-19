@@ -24,7 +24,7 @@ get_dims_2d <- function(x, warn = FALSE) {
     d2 <- dim(x)[2]
     if (warn == TRUE) {
         if (d1 < 100 | d2 < 100) {
-            warning("The number of observations and/or the number of covariates is lower than 100.  mmBPFA performs best when both are relatively large.  Be aware that your final results may have a dimensionality much lower than the truth.")
+            warning("The number of observations and/or the number of covariates is lower than 100.  mosaicFA performs best when both are relatively large.  Be aware that your final results may have a dimensionality much lower than the truth.")
         }
     }
     return(list(d1, d2))

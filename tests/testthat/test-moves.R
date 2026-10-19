@@ -89,7 +89,7 @@ for (case in c("dense", "sparse")) {
     skip_on_cran()
     y <- invariance_data(5)[[case]]
     fit <- function(moves, seed) {
-      utils::capture.output(r <- mmBPFA_sampler(y, H = 4, K_start = 2, warmup = 500, iter = 8000, thin = 2,
+      utils::capture.output(r <- mosaicFA_sampler(y, H = 4, K_start = 2, warmup = 500, iter = 8000, thin = 2,
                                                 chains = 2, seed = seed, moves = moves))
       cc <- lapply(r, function(ch) sapply(ch$lambda, function(L) {
         C <- tcrossprod(L) + diag(12); D <- 1 / sqrt(diag(C)); (C * outer(D, D))[upper.tri(C)] }))

@@ -2,12 +2,12 @@
 % Please edit documentation in R/process_results.R
 \name{process_results}
 \alias{process_results}
-\title{Process results from an mmBPFA sampling run}
+\title{Process results from an mosaicFA sampling run}
 \usage{
 process_results(mcmc_object, SE = TRUE, p = c(0.05, 0.95), to_tibble = TRUE)
 }
 \arguments{
-\item{mcmc_object}{Output of \code{mmBPFA_sampler} (class \code{bpfa.results}).}
+\item{mcmc_object}{Output of \code{mosaicFA_sampler} (class \code{mosaicfa.results}).}
 
 \item{SE}{Whether to add credible intervals.}
 

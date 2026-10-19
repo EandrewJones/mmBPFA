@@ -20,7 +20,7 @@ double log_interval_prob(double a, double b) {
 // Thresholds between adjacent levels: midpoint of the gap between the largest
 // x of level v and the smallest x of level v + 1. Stored flat, column by
 // column, with n_levels[j] - 1 entries per column.
-std::vector<double> level_thresholds(const mmbpfa::Data& d, const Rcpp::NumericVector& x) {
+std::vector<double> level_thresholds(const mosaicfa::Data& d, const Rcpp::NumericVector& x) {
     std::vector<double> th;
     for (int j = 0; j < d.p; j++) {
         for (int v = 0; v + 1 < d.n_levels[j]; v++) {
@@ -33,13 +33,13 @@ std::vector<double> level_thresholds(const mmbpfa::Data& d, const Rcpp::NumericV
     return th;
 }
 
-double log_likelihood(const mmbpfa::Data& d, const std::vector<double>& th, const arma::mat& lambda,
+double log_likelihood(const mosaicfa::Data& d, const std::vector<double>& th, const arma::mat& lambda,
                       const arma::mat& omega) {
     const arma::mat omega_t = omega.t();
     std::vector<int> offset(d.p + 1, 0);     // start of column j's thresholds in th
     for (int j = 0; j < d.p; j++) offset[j + 1] = offset[j] + std::max(d.n_levels[j] - 1, 0);
     std::vector<double> ll_col(d.p, 0.0);
-    #pragma omp parallel for schedule(dynamic, 8) num_threads(mmbpfa::num_threads())
+    #pragma omp parallel for schedule(dynamic, 8) num_threads(mosaicfa::num_threads())
     for (int j = 0; j < d.p; j++) {
         const int L = d.n_levels[j];
         double ll = 0;
@@ -71,7 +71,7 @@ double log_likelihood(const mmbpfa::Data& d, const std::vector<double>& th, cons
 // [[Rcpp::export(name = ".log_likelihood_from_x")]]
 double log_likelihood_from_x(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& lambda,
                              const arma::mat& omega) {
-    const mmbpfa::Data d(data);
+    const mosaicfa::Data d(data);
     return log_likelihood(d, level_thresholds(d, x), lambda, omega);
 }
 
@@ -95,8 +95,8 @@ double log_likelihood_from_x(const Rcpp::List& data, const Rcpp::NumericVector& 
 Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List state0,
                      arma::mat omega0, const Rcpp::List& prior,
                      int warmup, int iter, int thin, double seed, int threads, int moves) {
-    mmbpfa::num_threads() = threads < 1 ? 1 : threads;
-    const mmbpfa::Data d(data);
+    mosaicfa::num_threads() = threads < 1 ? 1 : threads;
+    const mosaicfa::Data d(data);
     Rcpp::NumericVector x = Rcpp::clone(x0);
     Rcpp::List state = state0;
     arma::mat omega = omega0;

@@ -10,7 +10,7 @@ test_that("thresholds of independent binary items recover qnorm(1 - q) from any 
   set.seed(11)
   n <- 600; q <- c(0.2, 0.5, 0.8)
   y <- sapply(rep(q, each = 4), function(qq) rbinom(n, 1, qq))
-  utils::capture.output(res <- mmBPFA_sampler(y, K_start = 1, warmup = 1000, iter = 4000, thin = 4,
+  utils::capture.output(res <- mosaicFA_sampler(y, K_start = 1, warmup = 1000, iter = 4000, thin = 4,
                                               chains = 2, seed = 3))
   out <- suppressWarnings(process_results(res, SE = FALSE))
   th <- out[["Item Thresholds"]]
@@ -25,7 +25,7 @@ test_that("thresholds of independent binary items recover qnorm(1 - q) from any 
 test_that("item thresholds come with credible intervals for items with few levels", {
   set.seed(12)
   y <- cbind(matrix(rbinom(80 * 4, 1, 0.4), 80, 4), matrix(rbinom(80 * 2, 3, 0.5), 80, 2), rnorm(80))
-  utils::capture.output(res <- mmBPFA_sampler(y, K_start = 1, warmup = 20, iter = 40, thin = 2, seed = 1))
+  utils::capture.output(res <- mosaicFA_sampler(y, K_start = 1, warmup = 20, iter = 40, thin = 2, seed = 1))
   out <- suppressWarnings(process_results(res))
   th <- out[["Item Thresholds"]]
   expect_null(out[["Item-level Intercepts"]])

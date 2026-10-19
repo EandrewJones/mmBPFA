@@ -1,7 +1,7 @@
-#' Generate data for running simulations with mmBPFA
+#' Generate data for running simulations with mosaicFA
 #' 
 #' \code{generate_sim_data} produces simulated data that can be used for testing 
-#' the mmBPFA sampler prior to production runs to ensure it will behave as expected.
+#' the mosaicFA sampler prior to production runs to ensure it will behave as expected.
 #' 
 #' @param mode Sets the type of margins for the simulated data. Must be one of "fixed", "multi" or "mixed." Default is "fixed."
 #' @param n_levels Max number of unique values per margin. When mode is "fixed" n_levels is constant across margins. When mode is "multi" a margin may take on unique values up to n_levels. When mode is "mixed", n_levels determines max number of arbitrary distributions data may be drawn from. Default is 2.
@@ -17,7 +17,7 @@
 #' @param noise Numeric value between 0 and 1 determining how much noise should be induced into the data. Default is 0.05.
 #' @param seed Random seed. Default is 123.
 #' 
-#' @return S3 object of class `mmBPFA.simulated.data` containing generated data and true underlying values. Attributes note the user-given arguments.
+#' @return S3 object of class `mosaicFA.simulated.data` containing generated data and true underlying values. Attributes note the user-given arguments.
 #' 
 #' @export
 #' 
@@ -340,7 +340,7 @@ generate_sim_data <- function(
     output_list[["true_values"]] <- true_vals
 
     # add attributes
-    class(output_list) <- "mmBPFA.simulated.data"
+    class(output_list) <- "mosaicFA.simulated.data"
     attr(output_list, "mode") <- mode
     attr(output_list, "n_levels") <- n_levels
     if (mode == "mixed") attr(output_list, "margin_dists") <- margin_dists
@@ -362,6 +362,6 @@ generate_sim_data <- function(
 
 #' zeallot destructure function
 #' @keywords internal
-destructure.mmBPFA.simulated.data <- function(x) {
+destructure.mosaicFA.simulated.data <- function(x) {
     list(x$data, x$true_values)
 }

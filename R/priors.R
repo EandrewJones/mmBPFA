@@ -45,7 +45,7 @@ resolve_priors <- function(priors = "uniform", p, H = NULL) {
 
 #' Retrieve every prior setting used for a fit
 #'
-#' @param x sampler output (class \code{bpfa.results}) or processed results.
+#' @param x sampler output (class \code{mosaicfa.results}) or processed results.
 #'
 #' @return Named list of prior settings.
 #'

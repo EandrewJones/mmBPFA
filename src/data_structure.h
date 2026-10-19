@@ -1,10 +1,10 @@
 // C++ view of the compressed observed-cell layout built by prepare_data() in R.
-#ifndef MMBPFA_DATA_STRUCTURE_H
-#define MMBPFA_DATA_STRUCTURE_H
+#ifndef MOSAICFA_DATA_STRUCTURE_H
+#define MOSAICFA_DATA_STRUCTURE_H
 
 #include <RcppArmadillo.h>
 
-namespace mmbpfa {
+namespace mosaicfa {
 
 struct Data {
     int n, p;
@@ -20,6 +20,6 @@ struct Data {
     int level_begin(int j, int v) const { return level_ptr[lvl_col_ptr[j] + v]; }
 };
 
-} // namespace mmbpfa
+} // namespace mosaicfa
 
 #endif

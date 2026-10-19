@@ -1,11 +1,11 @@
-Package: mmBPFA
+Package: mosaicFA
 Type: Package
-Title: Multi-Modal Beta-Process Factor Analysis
-Version: 1.1.0
-Date: 2020-07-07
+Title: Multimodal Order-Based Sparse Adaptive Interpretable Copula Factor Analysis
+Version: 2.0.0
+Date: 2026-10-19
 Author: Evan Jones [aut, cre]
 Maintainer: Evan Jones <evan.a.jones3@gmail.com>
-Description: A semi-parametric Bayesian factor analysis for multimodal data.
+Description: A semi-parametric Bayesian factor analysis for multimodal data (mosaicFA).
              Observed items with any mix of binary, ordinal, count and continuous
              margins are treated as monotone transformations of a latent Gaussian
              copula through the extended rank likelihood (Hoff 2007; Murray et al. 2013),

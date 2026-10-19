@@ -1,4 +1,4 @@
-useDynLib(mmBPFA, .registration=TRUE)
+useDynLib(mosaicFA, .registration=TRUE)
 import(abind)
 import(rdist)
 import(dplyr)

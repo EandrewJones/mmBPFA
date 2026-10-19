@@ -13,7 +13,7 @@
 #'   pmap_lgl reduce some transpose
 #' @importFrom Rcpp evalCpp
 #' @importFrom utils txtProgressBar setTxtProgressBar
-#' @useDynLib mmBPFA, .registration = TRUE
+#' @useDynLib mosaicFA, .registration = TRUE
 "_PACKAGE"
 
 globalVariables(".")

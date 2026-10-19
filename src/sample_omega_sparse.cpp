@@ -81,7 +81,7 @@ void accumulate_outer(arma::mat& prec, const arma::mat& lambda_t, int j, double 
 arma::mat sample_omega_sparse(const Rcpp::List& data, const Rcpp::NumericVector& x,
                               const arma::mat& lambda,
                               double seed, double iter) {
-    const mmbpfa::Data d(data);
+    const mosaicfa::Data d(data);
     const int K = lambda.n_cols;
     const arma::mat lambda_t = lambda.t();       // K x P: one contiguous column per item
 
@@ -98,7 +98,7 @@ arma::mat sample_omega_sparse(const Rcpp::List& data, const Rcpp::NumericVector&
     arma::mat rhs_full(K, nf), z_full(K, nf);
     bool failed = false;
 
-    #pragma omp parallel for schedule(dynamic, 16) num_threads(mmbpfa::num_threads())
+    #pragma omp parallel for schedule(dynamic, 16) num_threads(mosaicfa::num_threads())
     for (int i = 0; i < d.n; i++) {
         const int begin = d.row_ptr[i], end = d.row_ptr[i + 1], n_i = end - begin;
         arma::vec rhs(K, arma::fill::zeros), z(K);
@@ -108,7 +108,7 @@ arma::mat sample_omega_sparse(const Rcpp::List& data, const Rcpp::NumericVector&
             const double* l = lambda_t.colptr(j);
             for (int k = 0; k < K; k++) rhs[k] += l[k] * w;
         }
-        mmbpfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter), mmbpfa::stream_id(mmbpfa::KERNEL_OMEGA, i));
+        mosaicfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter), mosaicfa::stream_id(mosaicfa::KERNEL_OMEGA, i));
         for (int k = 0; k < K; k++) z[k] = rng.norm();
 
         if (n_i > 0 && 2 * n_i < K) {

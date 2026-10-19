@@ -1,3 +1,13 @@
+# mosaicFA 2.0.0
+
+## Breaking changes
+
+* The package is renamed from mmBPFA to **mosaicFA** (Multimodal, Order-based, Sparse, Adaptive, Interpretable Copula Factor Analysis). The model is no longer a beta process. `mmBPFA_sampler()` is now `mosaicFA_sampler()`, and the sampler output class is `mosaicfa.results`.
+
+## New features
+
+* Optional scale moves (`moves = c("item_scale", "column_scale")`). They leave the posterior unchanged and speed up early mixing slightly.
+
 # mmBPFA 1.1.0
 
 ## Breaking changes
@@ -14,7 +24,6 @@
 * Long-format input (`row`, `col`, `value`) so sparse data never build the N x P matrix.
 * The whole chain runs in C++ on observed cells only, with OpenMP threads (`threads`). Results are bit-identical for any thread count.
 * R-hat for the number of dimensions across chains, with a warning when chains disagree.
-* Optional scale moves (`moves = c("item_scale", "column_scale")`). They leave the posterior unchanged and speed up early mixing slightly.
 
 ## Bug fixes
 

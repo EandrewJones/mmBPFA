@@ -7,7 +7,7 @@
 item_thresholds(mcmc_object, p = NULL)
 }
 \arguments{
-\item{mcmc_object}{output of \code{mmBPFA_sampler}.}
+\item{mcmc_object}{output of \code{mosaicFA_sampler}.}
 
 \item{p}{lower and upper probabilities of the credible intervals, or NULL for none.}
 }

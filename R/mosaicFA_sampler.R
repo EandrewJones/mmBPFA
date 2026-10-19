@@ -1,6 +1,6 @@
-#' mmBPFA Gibbs sampler
+#' mosaicFA Gibbs sampler
 #'
-#' \code{mmBPFA_sampler} fits the Gaussian-copula factor model with the
+#' \code{mosaicFA_sampler} fits the Gaussian-copula factor model with the
 #' extended rank likelihood (Hoff 2007), so any mix of binary, ordinal, count
 #' and continuous items can be analysed without modelling their margins. The
 #' number of dimensions is learned with a cumulative shrinkage prior over
@@ -27,7 +27,7 @@
 #'   any of \code{"item_scale"} (rescale each item's latent values and loadings)
 #'   and \code{"column_scale"} (trade scale between each column's loadings and scores).
 #'
-#' @return Object of class \code{bpfa.results}: a list with one element per chain,
+#' @return Object of class \code{mosaicfa.results}: a list with one element per chain,
 #'   each holding the kept draws (\code{lambda}, \code{z}, \code{c}, \code{omega},
 #'   \code{theta}, \code{a_cusp}), the number of counted dimensions \code{K} and the
 #'   log-likelihood \code{log_lik} per draw, posterior-mean level \code{thresholds}, the
@@ -36,7 +36,7 @@
 #'   and the run settings.
 #'
 #' @export
-mmBPFA_sampler <- function(
+mosaicFA_sampler <- function(
     dat,
     priors = "uniform",
     H = NULL,
@@ -83,7 +83,7 @@ mmBPFA_sampler <- function(
 
     structure(
         chain_out,
-        class = "bpfa.results",
+        class = "mosaicfa.results",
         priors = prior,
         n = data$n, p = data$p, levels = level_values(data),
         warmup = warmup, iter = iter, thin = thin, chains = chains,
@@ -141,6 +141,6 @@ level_values <- function(data) {
 run_chains_psock <- function(chains, n_cores, chain_fun) {
     cl <- parallel::makeCluster(n_cores)
     on.exit(parallel::stopCluster(cl), add = TRUE)
-    parallel::clusterEvalQ(cl, library(mmBPFA))
+    parallel::clusterEvalQ(cl, library(mosaicFA))
     parallel::parLapply(cl, seq_len(chains), chain_fun)
 }

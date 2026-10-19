@@ -14,7 +14,7 @@ namespace {
 // t = log u has the log-concave density g(t) = p t - (psi e^t + chi e^-t) / 2, sampled
 // by ratio-of-uniforms around its mode; the acceptance rate of this bounding box is
 // at least e / 4 for any log-concave density.
-double draw_gig(double p, double chi, double psi, mmbpfa::Rng& rng) {
+double draw_gig(double p, double chi, double psi, mosaicfa::Rng& rng) {
     if (chi <= 0 || (psi <= 0 && p >= 0)) return 1.0;     // improper: leave the state where it is
     const double y = psi > 0 ? (p + std::sqrt(p * p + psi * chi)) / psi : -chi / (2 * p);
     const double m = std::log(y);
@@ -56,12 +56,12 @@ double draw_gig(double p, double chi, double psi, mmbpfa::Rng& rng) {
 Rcpp::List item_scale_move(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& lambda,
                            const arma::imat& z, const arma::mat& omega,
                            const arma::vec& theta, double seed, double iter) {
-    const mmbpfa::Data d(data);
+    const mosaicfa::Data d(data);
     const arma::mat omega_t = omega.t();
     Rcpp::NumericVector x_out = Rcpp::clone(x);
     arma::mat lambda_out = lambda;
     arma::vec s(d.p, arma::fill::ones);
-    #pragma omp parallel for schedule(dynamic, 8) num_threads(mmbpfa::num_threads())
+    #pragma omp parallel for schedule(dynamic, 8) num_threads(mosaicfa::num_threads())
     for (int j = 0; j < d.p; j++) {
         const int begin = d.col_ptr[j], end = d.col_ptr[j + 1];
         const arma::rowvec lam_j = lambda.row(j);
@@ -73,7 +73,7 @@ Rcpp::List item_scale_move(const Rcpp::List& data, const Rcpp::NumericVector& x,
         for (arma::uword k = 0; k < lambda.n_cols; k++)
             if (z(j, k)) { A += lam_j[k] * lam_j[k] / theta[k]; m++; }
         if (A <= 0 || end - begin + m == 0) continue;
-        mmbpfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter), mmbpfa::stream_id(mmbpfa::KERNEL_MOVES, j));
+        mosaicfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter), mosaicfa::stream_id(mosaicfa::KERNEL_MOVES, j));
         const double sj = std::sqrt(rng.gamma(0.5 * (end - begin + m)) / (0.5 * A));
         s[j] = sj;
         for (int c = begin; c < end; c++) x_out[c] *= sj;
@@ -101,8 +101,8 @@ Rcpp::List column_scale_move(const arma::mat& lambda, const arma::imat& z, const
         const double m = arma::accu(z.col(k));
         const double chi = arma::dot(omega.col(k), omega.col(k));
         const double psi = arma::dot(lambda.col(k), lambda.col(k)) / theta[k];
-        mmbpfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter),
-                        mmbpfa::stream_id(mmbpfa::KERNEL_MOVES, (uint64_t(1) << 40) + k));
+        mosaicfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter),
+                        mosaicfa::stream_id(mosaicfa::KERNEL_MOVES, (uint64_t(1) << 40) + k));
         s[k] = std::sqrt(draw_gig(0.5 * (m - N), chi, psi, rng));
         lambda_out.col(k) *= s[k];
         omega_out.col(k) /= s[k];

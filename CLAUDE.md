@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`mmBPFA` is an R package (Rcpp/RcppArmadillo) for Bayesian factor analysis of any mix of binary, ordinal, count and continuous items. The margins are left unmodelled: the data are treated as monotone transforms of a latent Gaussian copula, through the extended rank likelihood (Hoff 2007; Murray et al. 2013).
+`mosaicFA` is an R package (Rcpp/RcppArmadillo) for Bayesian factor analysis of any mix of binary, ordinal, count and continuous items. The margins are left unmodelled: the data are treated as monotone transforms of a latent Gaussian copula, through the extended rank likelihood (Hoff 2007; Murray et al. 2013).
 
 The number of dimensions K is learned with a cumulative shrinkage (CUSP) prior over columns (Legramanti, Durante & Dunson 2020). Within each column, item inclusion is learned separately (Schiavon, Canale & Dunson 2022). The fit therefore says both how many dimensions there are and which items load on each one.
 
@@ -26,7 +26,7 @@ Rscript -e 'Rcpp::compileAttributes()'
 Rscript -e 'roxygen2::roxygenise(roclets = "rd")'
 
 # Full package check
-R CMD build . && R CMD check --no-manual mmBPFA_1.0.tar.gz
+R CMD build . && R CMD check --no-manual mosaicFA_1.0.tar.gz
 
 # Scaling benchmark (N, P, sparsity, threads); not part of the package build
 Rscript bench/scaling.R results.csv
@@ -34,7 +34,7 @@ Rscript bench/scaling.R results.csv
 
 **Timing tests need an optimized build.** `devtools::test()` / `pkgload::load_all()` compile at `-O0`, which makes the timing tests fail. Run `pkgbuild::compile_dll(debug = FALSE)` and then `load_all(compile = FALSE)`. Delete `src/*.o src/*.so` first if a debug build is already present.
 
-**Some tests need the installed package.** The socket-cluster test in `test-sampler-run.R` is skipped unless mmBPFA is installed, because PSOCK workers call `library(mmBPFA)`.
+**Some tests need the installed package.** The socket-cluster test in `test-sampler-run.R` is skipped unless mosaicFA is installed, because PSOCK workers call `library(mosaicFA)`.
 
 ## Testing conventions
 
@@ -50,11 +50,11 @@ Use `expect_z()` (a Monte Carlo z-score against the standard error) for means an
 
 `NAMESPACE` has no roxygen header and uses `exportPattern("^[[:alpha:]]+")`. So every function whose name starts with a letter is exported, including the "internal" ones. C++ test entry points use dot-prefixed export names (`.sample_loadings`, `.run_chain`, ...) so they stay internal.
 
-The `@import` tags in `R/mmBPFA.R` do **not** drive `NAMESPACE`: add dependencies to `NAMESPACE` and `DESCRIPTION` by hand. Don't let `devtools::document()` overwrite `NAMESPACE`.
+The `@import` tags in `R/mosaicFA.R` do **not** drive `NAMESPACE`: add dependencies to `NAMESPACE` and `DESCRIPTION` by hand. Don't let `devtools::document()` overwrite `NAMESPACE`.
 
 ## Architecture
 
-**Pipeline:** `generate_sim_data()` (optional) → `mmBPFA_sampler()` → `process_results()` → `check_accuracy()` / `check_logliks()`.
+**Pipeline:** `generate_sim_data()` (optional) → `mosaicFA_sampler()` → `process_results()` → `check_accuracy()` / `check_logliks()`.
 
 **Data layout (`R/prepare_data.R`, `src/data_structure.h`).** Only observed cells are stored:
 - **Column layout (CSC):** cells are stored column by column, sorted by value within each column, so the rank-likelihood levels are contiguous.
@@ -64,7 +64,7 @@ The `@import` tags in `R/mmBPFA.R` do **not** drive `NAMESPACE`: add dependencie
 - **Latent x** lives as one value per observed cell. It must start rank-consistent (`initial_x`).
 
 **Sampler.**
-- `mmBPFA_sampler()` (R) resolves the priors (`R/priors.R`; `get_priors()` retrieves them) and checks the memory needed for stored draws.
+- `mosaicFA_sampler()` (R) resolves the priors (`R/priors.R`; `get_priors()` retrieves them) and checks the memory needed for stored draws.
 - `run_one_chain()` (R) initializes a chain from `set.seed(seed + chain - 1)` and calls `.run_chain` (C++, `src/run_chain.cpp`).
 - `.run_chain` runs the whole chain. Each sweep is `sample_x_sparse` → `sample_loadings` → `sample_omega_sparse`, then the optional scale moves (`moves`, `src/sample_moves.cpp`). On kept draws it also computes K and the log-likelihood, with thresholds taken from the gaps between levels of x.
 - **No item intercepts.** Under the rank likelihood an intercept is not identified (shifting x_j and α_j together changes nothing), and with a flat prior its posterior is improper. So the model has none: the latent location is fixed by ΛΩ', and item difficulty is the level thresholds ("Item Thresholds"). Don't reintroduce a non-identified parameter. Any move that touches one breaks invariance (see design doc §9).

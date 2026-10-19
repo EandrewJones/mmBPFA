@@ -3,14 +3,14 @@
 // Each parallel unit of work (a column, a row) gets its own stream, seeded
 // from (seed, iteration, stream id), so draws do not depend on the number of
 // threads. The generator is xoshiro256++ seeded through splitmix64.
-#ifndef MMBPFA_RNG_H
-#define MMBPFA_RNG_H
+#ifndef MOSAICFA_RNG_H
+#define MOSAICFA_RNG_H
 
 #include <cmath>
 #include <cstdint>
 #include <limits>
 
-namespace mmbpfa {
+namespace mosaicfa {
 
 // Stream ids carry the kernel in their high bits, so two kernels drawing for the
 // same column or row in the same iteration never share random numbers.
@@ -120,6 +120,6 @@ private:
     }
 };
 
-} // namespace mmbpfa
+} // namespace mosaicfa
 
 #endif

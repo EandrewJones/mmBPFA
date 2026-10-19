@@ -13,7 +13,7 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 
 // rng_draws
 Rcpp::NumericVector rng_draws(std::string kind, int n, double seed, Rcpp::NumericVector params);
-RcppExport SEXP _mmBPFA_rng_draws(SEXP kindSEXP, SEXP nSEXP, SEXP seedSEXP, SEXP paramsSEXP) {
+RcppExport SEXP _mosaicFA_rng_draws(SEXP kindSEXP, SEXP nSEXP, SEXP seedSEXP, SEXP paramsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -27,7 +27,7 @@ END_RCPP
 }
 // rng_stream
 Rcpp::NumericVector rng_stream(double seed, double iter, double stream, int n);
-RcppExport SEXP _mmBPFA_rng_stream(SEXP seedSEXP, SEXP iterSEXP, SEXP streamSEXP, SEXP nSEXP) {
+RcppExport SEXP _mosaicFA_rng_stream(SEXP seedSEXP, SEXP iterSEXP, SEXP streamSEXP, SEXP nSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -41,7 +41,7 @@ END_RCPP
 }
 // log_likelihood_from_x
 double log_likelihood_from_x(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& lambda, const arma::mat& omega);
-RcppExport SEXP _mmBPFA_log_likelihood_from_x(SEXP dataSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP omegaSEXP) {
+RcppExport SEXP _mosaicFA_log_likelihood_from_x(SEXP dataSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP omegaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -55,7 +55,7 @@ END_RCPP
 }
 // run_chain
 Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List state0, arma::mat omega0, const Rcpp::List& prior, int warmup, int iter, int thin, double seed, int threads, int moves);
-RcppExport SEXP _mmBPFA_run_chain(SEXP dataSEXP, SEXP x0SEXP, SEXP state0SEXP, SEXP omega0SEXP, SEXP priorSEXP, SEXP warmupSEXP, SEXP iterSEXP, SEXP thinSEXP, SEXP seedSEXP, SEXP threadsSEXP, SEXP movesSEXP) {
+RcppExport SEXP _mosaicFA_run_chain(SEXP dataSEXP, SEXP x0SEXP, SEXP state0SEXP, SEXP omega0SEXP, SEXP priorSEXP, SEXP warmupSEXP, SEXP iterSEXP, SEXP thinSEXP, SEXP seedSEXP, SEXP threadsSEXP, SEXP movesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -76,7 +76,7 @@ END_RCPP
 }
 // sample_column_indicators
 arma::ivec sample_column_indicators(const arma::mat& lambda, const arma::imat& z, const arma::vec& v, const Rcpp::List& prior, double seed, double iter);
-RcppExport SEXP _mmBPFA_sample_column_indicators(SEXP lambdaSEXP, SEXP zSEXP, SEXP vSEXP, SEXP priorSEXP, SEXP seedSEXP, SEXP iterSEXP) {
+RcppExport SEXP _mosaicFA_sample_column_indicators(SEXP lambdaSEXP, SEXP zSEXP, SEXP vSEXP, SEXP priorSEXP, SEXP seedSEXP, SEXP iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -92,7 +92,7 @@ END_RCPP
 }
 // sample_sticks
 Rcpp::List sample_sticks(const arma::ivec& c, double a_cusp, const Rcpp::List& prior, double seed, double iter);
-RcppExport SEXP _mmBPFA_sample_sticks(SEXP cSEXP, SEXP a_cuspSEXP, SEXP priorSEXP, SEXP seedSEXP, SEXP iterSEXP) {
+RcppExport SEXP _mosaicFA_sample_sticks(SEXP cSEXP, SEXP a_cuspSEXP, SEXP priorSEXP, SEXP seedSEXP, SEXP iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -107,7 +107,7 @@ END_RCPP
 }
 // sample_a_cusp
 double sample_a_cusp(const arma::ivec& c, double a_current, const Rcpp::List& prior, double seed, double iter);
-RcppExport SEXP _mmBPFA_sample_a_cusp(SEXP cSEXP, SEXP a_currentSEXP, SEXP priorSEXP, SEXP seedSEXP, SEXP iterSEXP) {
+RcppExport SEXP _mosaicFA_sample_a_cusp(SEXP cSEXP, SEXP a_currentSEXP, SEXP priorSEXP, SEXP seedSEXP, SEXP iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -122,7 +122,7 @@ END_RCPP
 }
 // sample_theta
 arma::vec sample_theta(const arma::mat& lambda, const arma::imat& z, const arma::ivec& c, const Rcpp::List& prior, double seed, double iter);
-RcppExport SEXP _mmBPFA_sample_theta(SEXP lambdaSEXP, SEXP zSEXP, SEXP cSEXP, SEXP priorSEXP, SEXP seedSEXP, SEXP iterSEXP) {
+RcppExport SEXP _mosaicFA_sample_theta(SEXP lambdaSEXP, SEXP zSEXP, SEXP cSEXP, SEXP priorSEXP, SEXP seedSEXP, SEXP iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -138,7 +138,7 @@ END_RCPP
 }
 // sample_loadings
 Rcpp::List sample_loadings(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& omega, const Rcpp::List& state, const Rcpp::List& prior, double seed, double iter);
-RcppExport SEXP _mmBPFA_sample_loadings(SEXP dataSEXP, SEXP xSEXP, SEXP omegaSEXP, SEXP stateSEXP, SEXP priorSEXP, SEXP seedSEXP, SEXP iterSEXP) {
+RcppExport SEXP _mosaicFA_sample_loadings(SEXP dataSEXP, SEXP xSEXP, SEXP omegaSEXP, SEXP stateSEXP, SEXP priorSEXP, SEXP seedSEXP, SEXP iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -155,7 +155,7 @@ END_RCPP
 }
 // item_scale_move
 Rcpp::List item_scale_move(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& lambda, const arma::imat& z, const arma::mat& omega, const arma::vec& theta, double seed, double iter);
-RcppExport SEXP _mmBPFA_item_scale_move(SEXP dataSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP zSEXP, SEXP omegaSEXP, SEXP thetaSEXP, SEXP seedSEXP, SEXP iterSEXP) {
+RcppExport SEXP _mosaicFA_item_scale_move(SEXP dataSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP zSEXP, SEXP omegaSEXP, SEXP thetaSEXP, SEXP seedSEXP, SEXP iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -173,7 +173,7 @@ END_RCPP
 }
 // column_scale_move
 Rcpp::List column_scale_move(const arma::mat& lambda, const arma::imat& z, const arma::mat& omega, const arma::vec& theta, double seed, double iter);
-RcppExport SEXP _mmBPFA_column_scale_move(SEXP lambdaSEXP, SEXP zSEXP, SEXP omegaSEXP, SEXP thetaSEXP, SEXP seedSEXP, SEXP iterSEXP) {
+RcppExport SEXP _mosaicFA_column_scale_move(SEXP lambdaSEXP, SEXP zSEXP, SEXP omegaSEXP, SEXP thetaSEXP, SEXP seedSEXP, SEXP iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -189,7 +189,7 @@ END_RCPP
 }
 // sample_omega_sparse
 arma::mat sample_omega_sparse(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& lambda, double seed, double iter);
-RcppExport SEXP _mmBPFA_sample_omega_sparse(SEXP dataSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP seedSEXP, SEXP iterSEXP) {
+RcppExport SEXP _mosaicFA_sample_omega_sparse(SEXP dataSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP seedSEXP, SEXP iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -204,7 +204,7 @@ END_RCPP
 }
 // sample_x_sparse
 Rcpp::NumericVector sample_x_sparse(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& lambda, const arma::mat& omega, double seed, double iter);
-RcppExport SEXP _mmBPFA_sample_x_sparse(SEXP dataSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP omegaSEXP, SEXP seedSEXP, SEXP iterSEXP) {
+RcppExport SEXP _mosaicFA_sample_x_sparse(SEXP dataSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP omegaSEXP, SEXP seedSEXP, SEXP iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -220,7 +220,7 @@ END_RCPP
 }
 // openmp_available
 bool openmp_available();
-RcppExport SEXP _mmBPFA_openmp_available() {
+RcppExport SEXP _mosaicFA_openmp_available() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -230,7 +230,7 @@ END_RCPP
 }
 // set_threads
 void set_threads(int n);
-RcppExport SEXP _mmBPFA_set_threads(SEXP nSEXP) {
+RcppExport SEXP _mosaicFA_set_threads(SEXP nSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type n(nSEXP);
@@ -240,25 +240,25 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_mmBPFA_rng_draws", (DL_FUNC) &_mmBPFA_rng_draws, 4},
-    {"_mmBPFA_rng_stream", (DL_FUNC) &_mmBPFA_rng_stream, 4},
-    {"_mmBPFA_log_likelihood_from_x", (DL_FUNC) &_mmBPFA_log_likelihood_from_x, 4},
-    {"_mmBPFA_run_chain", (DL_FUNC) &_mmBPFA_run_chain, 11},
-    {"_mmBPFA_sample_column_indicators", (DL_FUNC) &_mmBPFA_sample_column_indicators, 6},
-    {"_mmBPFA_sample_sticks", (DL_FUNC) &_mmBPFA_sample_sticks, 5},
-    {"_mmBPFA_sample_a_cusp", (DL_FUNC) &_mmBPFA_sample_a_cusp, 5},
-    {"_mmBPFA_sample_theta", (DL_FUNC) &_mmBPFA_sample_theta, 6},
-    {"_mmBPFA_sample_loadings", (DL_FUNC) &_mmBPFA_sample_loadings, 7},
-    {"_mmBPFA_item_scale_move", (DL_FUNC) &_mmBPFA_item_scale_move, 8},
-    {"_mmBPFA_column_scale_move", (DL_FUNC) &_mmBPFA_column_scale_move, 6},
-    {"_mmBPFA_sample_omega_sparse", (DL_FUNC) &_mmBPFA_sample_omega_sparse, 5},
-    {"_mmBPFA_sample_x_sparse", (DL_FUNC) &_mmBPFA_sample_x_sparse, 6},
-    {"_mmBPFA_openmp_available", (DL_FUNC) &_mmBPFA_openmp_available, 0},
-    {"_mmBPFA_set_threads", (DL_FUNC) &_mmBPFA_set_threads, 1},
+    {"_mosaicFA_rng_draws", (DL_FUNC) &_mosaicFA_rng_draws, 4},
+    {"_mosaicFA_rng_stream", (DL_FUNC) &_mosaicFA_rng_stream, 4},
+    {"_mosaicFA_log_likelihood_from_x", (DL_FUNC) &_mosaicFA_log_likelihood_from_x, 4},
+    {"_mosaicFA_run_chain", (DL_FUNC) &_mosaicFA_run_chain, 11},
+    {"_mosaicFA_sample_column_indicators", (DL_FUNC) &_mosaicFA_sample_column_indicators, 6},
+    {"_mosaicFA_sample_sticks", (DL_FUNC) &_mosaicFA_sample_sticks, 5},
+    {"_mosaicFA_sample_a_cusp", (DL_FUNC) &_mosaicFA_sample_a_cusp, 5},
+    {"_mosaicFA_sample_theta", (DL_FUNC) &_mosaicFA_sample_theta, 6},
+    {"_mosaicFA_sample_loadings", (DL_FUNC) &_mosaicFA_sample_loadings, 7},
+    {"_mosaicFA_item_scale_move", (DL_FUNC) &_mosaicFA_item_scale_move, 8},
+    {"_mosaicFA_column_scale_move", (DL_FUNC) &_mosaicFA_column_scale_move, 6},
+    {"_mosaicFA_sample_omega_sparse", (DL_FUNC) &_mosaicFA_sample_omega_sparse, 5},
+    {"_mosaicFA_sample_x_sparse", (DL_FUNC) &_mosaicFA_sample_x_sparse, 6},
+    {"_mosaicFA_openmp_available", (DL_FUNC) &_mosaicFA_openmp_available, 0},
+    {"_mosaicFA_set_threads", (DL_FUNC) &_mosaicFA_set_threads, 1},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_mmBPFA(DllInfo *dll) {
+RcppExport void R_init_mosaicFA(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }

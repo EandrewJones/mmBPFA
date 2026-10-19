@@ -15,4 +15,4 @@ bool openmp_available() {
 //' Set the number of threads used inside a chain
 //' @keywords internal
 // [[Rcpp::export(name = ".set_threads")]]
-void set_threads(int n) { mmbpfa::num_threads() = n < 1 ? 1 : n; }
+void set_threads(int n) { mosaicfa::num_threads() = n < 1 ? 1 : n; }

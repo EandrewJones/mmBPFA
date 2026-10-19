@@ -2,7 +2,7 @@
 % Please edit documentation in R/generate_data.R
 \name{generate_sim_data}
 \alias{generate_sim_data}
-\title{Generate data for running simulations with mmBPFA}
+\title{Generate data for running simulations with mosaicFA}
 \usage{
 generate_sim_data(
   mode = "fixed",
@@ -48,9 +48,9 @@ generate_sim_data(
 \item{seed}{Random seed. Default is 123.}
 }
 \value{
-S3 object of class \code{mmBPFA.simulated.data} containing generated data and true underlying values. Attributes note the user-given arguments.
+S3 object of class \code{mosaicFA.simulated.data} containing generated data and true underlying values. Attributes note the user-given arguments.
 }
 \description{
 \code{generate_sim_data} produces simulated data that can be used for testing
-the mmBPFA sampler prior to production runs to ensure it will behave as expected.
+the mosaicFA sampler prior to production runs to ensure it will behave as expected.
 }

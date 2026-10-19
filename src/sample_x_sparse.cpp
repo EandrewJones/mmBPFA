@@ -24,15 +24,15 @@
 // [[Rcpp::export(name = ".sample_x_sparse")]]
 Rcpp::NumericVector sample_x_sparse(const Rcpp::List& data, const Rcpp::NumericVector& x,
                                     const arma::mat& lambda, const arma::mat& omega, double seed, double iter) {
-    const mmbpfa::Data d(data);
+    const mosaicfa::Data d(data);
     const arma::mat omega_t = omega.t();     // K x N: one contiguous column per row
     Rcpp::NumericVector out = Rcpp::clone(x);
 
-    #pragma omp parallel for schedule(dynamic, 8) num_threads(mmbpfa::num_threads())
+    #pragma omp parallel for schedule(dynamic, 8) num_threads(mosaicfa::num_threads())
     for (int j = 0; j < d.p; j++) {
         const int L = d.n_levels[j];
         if (L == 0) continue;
-        mmbpfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter), mmbpfa::stream_id(mmbpfa::KERNEL_X, j));
+        mosaicfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter), mosaicfa::stream_id(mosaicfa::KERNEL_X, j));
         const arma::rowvec lam_j = lambda.row(j);
 
         std::vector<double> level_min(L, R_PosInf);

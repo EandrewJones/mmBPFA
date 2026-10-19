@@ -31,7 +31,7 @@ fake_results <- function(L, O, n_draws = 6, chains = 1, flip_chain2 = FALSE) {
          thresholds = rep(0, p), threshold_draws = matrix(0, p, n_draws))
   }
   res <- lapply(seq_len(chains), one_chain)
-  structure(res, class = "bpfa.results", priors = resolve_priors("uniform", p, H = 3),
+  structure(res, class = "mosaicfa.results", priors = resolve_priors("uniform", p, H = 3),
             n = n, p = p, levels = rep(list(c(0, 1)), p), warmup = 0, iter = n_draws,
             thin = 1, chains = chains)
 }
@@ -116,7 +116,7 @@ test_that("check_accuracy compares as many dimensions as are both true and stabl
 
 test_that("process_results runs on real sampler output, with standard errors", {
   y <- generate_sim_data(n = 60, p = 30, K_true = 2, noise = 0, seed = 1)$data
-  utils::capture.output(res <- mmBPFA_sampler(y, K_start = 4, warmup = 50, iter = 40, thin = 2, chains = 2))
+  utils::capture.output(res <- mosaicFA_sampler(y, K_start = 4, warmup = 50, iter = 40, thin = 2, chains = 2))
   out <- suppressWarnings(process_results(res))
   expect_s3_class(out, "mcmc.output.processed")
   expect_true(all(c("mean", "ci_0.05", "ci_0.95") %in% names(out[["Factor Loadings"]])))

@@ -2,11 +2,11 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 .rng_draws <- function(kind, n, seed, params) {
-    .Call(`_mmBPFA_rng_draws`, kind, n, seed, params)
+    .Call(`_mosaicFA_rng_draws`, kind, n, seed, params)
 }
 
 .rng_stream <- function(seed, iter, stream, n) {
-    .Call(`_mmBPFA_rng_stream`, seed, iter, stream, n)
+    .Call(`_mosaicFA_rng_stream`, seed, iter, stream, n)
 }
 
 #' Log-likelihood of the observed data given latent x (test entry point)
@@ -15,7 +15,7 @@
 #'
 #' @keywords internal
 .log_likelihood_from_x <- function(data, x, lambda, omega) {
-    .Call(`_mmBPFA_log_likelihood_from_x`, data, x, lambda, omega)
+    .Call(`_mosaicFA_log_likelihood_from_x`, data, x, lambda, omega)
 }
 
 #' Run one chain
@@ -35,31 +35,31 @@
 #' @return List of kept draws and summaries. \code{threshold_draws} holds, for every kept draw,
 #'   the thresholds of items with at most 10 levels (rows in item order).
 .run_chain <- function(data, x0, state0, omega0, prior, warmup, iter, thin, seed, threads, moves) {
-    .Call(`_mmBPFA_run_chain`, data, x0, state0, omega0, prior, warmup, iter, thin, seed, threads, moves)
+    .Call(`_mosaicFA_run_chain`, data, x0, state0, omega0, prior, warmup, iter, thin, seed, threads, moves)
 }
 
 #' Sample column indicators of the cumulative shrinkage prior (test entry point)
 #' @keywords internal
 .sample_column_indicators <- function(lambda, z, v, prior, seed, iter) {
-    .Call(`_mmBPFA_sample_column_indicators`, lambda, z, v, prior, seed, iter)
+    .Call(`_mosaicFA_sample_column_indicators`, lambda, z, v, prior, seed, iter)
 }
 
 #' Sample stick-breaking weights (test entry point)
 #' @keywords internal
 .sample_sticks <- function(c, a_cusp, prior, seed, iter) {
-    .Call(`_mmBPFA_sample_sticks`, c, a_cusp, prior, seed, iter)
+    .Call(`_mosaicFA_sample_sticks`, c, a_cusp, prior, seed, iter)
 }
 
 #' Sample the cumulative shrinkage concentration given the indicators (test entry point)
 #' @keywords internal
 .sample_a_cusp <- function(c, a_current, prior, seed, iter) {
-    .Call(`_mmBPFA_sample_a_cusp`, c, a_current, prior, seed, iter)
+    .Call(`_mosaicFA_sample_a_cusp`, c, a_current, prior, seed, iter)
 }
 
 #' Sample column slab variances (test entry point)
 #' @keywords internal
 .sample_theta <- function(lambda, z, c, prior, seed, iter) {
-    .Call(`_mmBPFA_sample_theta`, lambda, z, c, prior, seed, iter)
+    .Call(`_mosaicFA_sample_theta`, lambda, z, c, prior, seed, iter)
 }
 
 #' One Gibbs update of the loadings block
@@ -80,7 +80,7 @@
 #'
 #' @return Updated state.
 .sample_loadings <- function(data, x, omega, state, prior, seed, iter) {
-    .Call(`_mmBPFA_sample_loadings`, data, x, omega, state, prior, seed, iter)
+    .Call(`_mosaicFA_sample_loadings`, data, x, omega, state, prior, seed, iter)
 }
 
 #' Item scale move
@@ -94,7 +94,7 @@
 #'
 #' @return list with x, lambda and the scales s.
 .item_scale_move <- function(data, x, lambda, z, omega, theta, seed, iter) {
-    .Call(`_mmBPFA_item_scale_move`, data, x, lambda, z, omega, theta, seed, iter)
+    .Call(`_mosaicFA_item_scale_move`, data, x, lambda, z, omega, theta, seed, iter)
 }
 
 #' Column scale move
@@ -106,7 +106,7 @@
 #'
 #' @return list with lambda, omega and the scales s.
 .column_scale_move <- function(lambda, z, omega, theta, seed, iter) {
-    .Call(`_mmBPFA_column_scale_move`, lambda, z, omega, theta, seed, iter)
+    .Call(`_mosaicFA_column_scale_move`, lambda, z, omega, theta, seed, iter)
 }
 
 #' Sample factor scores from observed cells
@@ -128,7 +128,7 @@
 #'
 #' @return N x K matrix.
 .sample_omega_sparse <- function(data, x, lambda, seed, iter) {
-    .Call(`_mmBPFA_sample_omega_sparse`, data, x, lambda, seed, iter)
+    .Call(`_mosaicFA_sample_omega_sparse`, data, x, lambda, seed, iter)
 }
 
 #' Sample latent x for every observed cell
@@ -147,18 +147,18 @@
 #'
 #' @return New latent values, one per observed cell.
 .sample_x_sparse <- function(data, x, lambda, omega, seed, iter) {
-    .Call(`_mmBPFA_sample_x_sparse`, data, x, lambda, omega, seed, iter)
+    .Call(`_mosaicFA_sample_x_sparse`, data, x, lambda, omega, seed, iter)
 }
 
 #' Whether the package was built with OpenMP
 #' @keywords internal
 .openmp_available <- function() {
-    .Call(`_mmBPFA_openmp_available`)
+    .Call(`_mosaicFA_openmp_available`)
 }
 
 #' Set the number of threads used inside a chain
 #' @keywords internal
 .set_threads <- function(n) {
-    invisible(.Call(`_mmBPFA_set_threads`, n))
+    invisible(.Call(`_mosaicFA_set_threads`, n))
 }
 

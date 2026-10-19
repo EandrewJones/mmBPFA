@@ -23,7 +23,7 @@ sim_binary <- function(n, p, K, seed) {   # same generator as the spike's sim_da
 }
 
 fit_summary <- function(y, K_start, seed) {
-  utils::capture.output(res <- mmBPFA_sampler(y, H = 30, K_start = K_start, warmup = 1000,
+  utils::capture.output(res <- mosaicFA_sampler(y, H = 30, K_start = K_start, warmup = 1000,
                                               iter = 1000, thin = 1, seed = seed))
   ch <- res[[1]]
   Cs <- Reduce(`+`, lapply(ch$lambda, copula_cor)) / length(ch$lambda)

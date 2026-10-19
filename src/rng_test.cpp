@@ -5,7 +5,7 @@
 
 // [[Rcpp::export(name = ".rng_draws")]]
 Rcpp::NumericVector rng_draws(std::string kind, int n, double seed, Rcpp::NumericVector params) {
-    mmbpfa::Rng rng(static_cast<uint64_t>(seed), 0, 0);
+    mosaicfa::Rng rng(static_cast<uint64_t>(seed), 0, 0);
     Rcpp::NumericVector out(n);
     for (int i = 0; i < n; i++) {
         if (kind == "norm") out[i] = rng.norm();
@@ -20,7 +20,7 @@ Rcpp::NumericVector rng_draws(std::string kind, int n, double seed, Rcpp::Numeri
 
 // [[Rcpp::export(name = ".rng_stream")]]
 Rcpp::NumericVector rng_stream(double seed, double iter, double stream, int n) {
-    mmbpfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter), static_cast<uint64_t>(stream));
+    mosaicfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter), static_cast<uint64_t>(stream));
     Rcpp::NumericVector out(n);
     for (int i = 0; i < n; i++) out[i] = rng.norm();
     return out;

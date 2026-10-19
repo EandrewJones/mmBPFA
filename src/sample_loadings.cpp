@@ -39,7 +39,7 @@ void column_loglik(const arma::mat& lambda, const arma::imat& z, int h, const Pr
 }
 
 arma::ivec draw_column_indicators(const arma::mat& lambda, const arma::imat& z,
-                                  const arma::vec& v, const Prior& pr, mmbpfa::Rng& rng) {
+                                  const arma::vec& v, const Prior& pr, mosaicfa::Rng& rng) {
     const int H = lambda.n_cols;
     arma::vec logw(H);
     double cum = 0;
@@ -64,7 +64,7 @@ arma::ivec draw_column_indicators(const arma::mat& lambda, const arma::imat& z,
     return c;
 }
 
-arma::vec draw_sticks(const arma::ivec& c, double a_cusp, mmbpfa::Rng& rng) {
+arma::vec draw_sticks(const arma::ivec& c, double a_cusp, mosaicfa::Rng& rng) {
     const int H = c.n_elem;
     arma::vec v(H);
     for (int l = 1; l < H; l++) {                      // 1-based l = 1..H-1
@@ -88,7 +88,7 @@ double log_a_posterior(double u, const std::vector<double>& n, const std::vector
 
 // Slice sampling (Neal 2003) on log a, given the column indicators only. Drawing a
 // given the sticks instead gets trapped at a = 0 once every column is off.
-double draw_a_cusp(const arma::ivec& c, double a_current, const Prior& pr, mmbpfa::Rng& rng) {
+double draw_a_cusp(const arma::ivec& c, double a_current, const Prior& pr, mosaicfa::Rng& rng) {
     const int H = c.n_elem;
     std::vector<double> n(H - 1, 0), g(H - 1, 0);
     for (int l = 1; l < H; l++)
@@ -107,7 +107,7 @@ double draw_a_cusp(const arma::ivec& c, double a_current, const Prior& pr, mmbpf
 }
 
 arma::vec draw_theta(const arma::mat& lambda, const arma::imat& z, const arma::ivec& c,
-                     const Prior& pr, mmbpfa::Rng& rng) {
+                     const Prior& pr, mosaicfa::Rng& rng) {
     const int H = lambda.n_cols;
     arma::vec theta(H);
     for (int h = 0; h < H; h++) {
@@ -123,9 +123,9 @@ arma::vec draw_theta(const arma::mat& lambda, const arma::imat& z, const arma::i
     return theta;
 }
 
-mmbpfa::Rng column_rng(double seed, double iter, int which) {
-    return mmbpfa::Rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter),
-                       mmbpfa::stream_id(mmbpfa::KERNEL_COLUMNS, which));
+mosaicfa::Rng column_rng(double seed, double iter, int which) {
+    return mosaicfa::Rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter),
+                       mosaicfa::stream_id(mosaicfa::KERNEL_COLUMNS, which));
 }
 
 } // namespace
@@ -135,7 +135,7 @@ mmbpfa::Rng column_rng(double seed, double iter, int which) {
 // [[Rcpp::export(name = ".sample_column_indicators")]]
 arma::ivec sample_column_indicators(const arma::mat& lambda, const arma::imat& z, const arma::vec& v,
                                     const Rcpp::List& prior, double seed, double iter) {
-    mmbpfa::Rng rng = column_rng(seed, iter, 0);
+    mosaicfa::Rng rng = column_rng(seed, iter, 0);
     return draw_column_indicators(lambda, z, v, Prior(prior), rng);
 }
 
@@ -143,7 +143,7 @@ arma::ivec sample_column_indicators(const arma::mat& lambda, const arma::imat& z
 //' @keywords internal
 // [[Rcpp::export(name = ".sample_sticks")]]
 Rcpp::List sample_sticks(const arma::ivec& c, double a_cusp, const Rcpp::List& prior, double seed, double iter) {
-    mmbpfa::Rng rng = column_rng(seed, iter, 1);
+    mosaicfa::Rng rng = column_rng(seed, iter, 1);
     return Rcpp::List::create(Rcpp::Named("v") = draw_sticks(c, a_cusp, rng));
 }
 
@@ -151,7 +151,7 @@ Rcpp::List sample_sticks(const arma::ivec& c, double a_cusp, const Rcpp::List& p
 //' @keywords internal
 // [[Rcpp::export(name = ".sample_a_cusp")]]
 double sample_a_cusp(const arma::ivec& c, double a_current, const Rcpp::List& prior, double seed, double iter) {
-    mmbpfa::Rng rng = column_rng(seed, iter, 2);
+    mosaicfa::Rng rng = column_rng(seed, iter, 2);
     return draw_a_cusp(c, a_current, Prior(prior), rng);
 }
 
@@ -160,7 +160,7 @@ double sample_a_cusp(const arma::ivec& c, double a_current, const Rcpp::List& pr
 // [[Rcpp::export(name = ".sample_theta")]]
 arma::vec sample_theta(const arma::mat& lambda, const arma::imat& z, const arma::ivec& c,
                        const Rcpp::List& prior, double seed, double iter) {
-    mmbpfa::Rng rng = column_rng(seed, iter, 3);
+    mosaicfa::Rng rng = column_rng(seed, iter, 3);
     return draw_theta(lambda, z, c, Prior(prior), rng);
 }
 
@@ -185,7 +185,7 @@ arma::vec sample_theta(const arma::mat& lambda, const arma::imat& z, const arma:
 Rcpp::List sample_loadings(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& omega,
                            const Rcpp::List& state, const Rcpp::List& prior,
                            double seed, double iter) {
-    const mmbpfa::Data d(data);
+    const mosaicfa::Data d(data);
     const Prior pr(prior);
     arma::mat lambda = Rcpp::as<arma::mat>(state["lambda"]);
     arma::imat z = Rcpp::as<arma::imat>(state["z"]);
@@ -208,15 +208,15 @@ Rcpp::List sample_loadings(const Rcpp::List& data, const Rcpp::NumericVector& x,
             const double logit_rho = std::log(rho[k]) - std::log1p(-rho[k]);
             const arma::vec old = lambda.col(k);
             arma::vec delta(d.p);
-            #pragma omp parallel for schedule(static) num_threads(mmbpfa::num_threads())
+            #pragma omp parallel for schedule(static) num_threads(mosaicfa::num_threads())
             for (int j = 0; j < d.p; j++) {
                 const double* ej = E.colptr(j);
                 double g = 0;
                 for (int i = 0; i < d.n; i++) g += ej[i] * w[i];
                 const double mu = (g + old[j] * ww) / prec;
                 const double lo = logit_rho + 0.5 * (std::log(prior_prec) - std::log(prec)) + 0.5 * prec * mu * mu;
-                mmbpfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter),
-                                mmbpfa::stream_id(mmbpfa::KERNEL_LOADINGS, static_cast<uint64_t>(k) * d.p + j));
+                mosaicfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter),
+                                mosaicfa::stream_id(mosaicfa::KERNEL_LOADINGS, static_cast<uint64_t>(k) * d.p + j));
                 const int on = rng.unif() < inv_logit(lo);
                 const double lam = on ? mu + rng.norm() / std::sqrt(prec) : 0.0;
                 z(j, k) = on;
@@ -230,7 +230,7 @@ Rcpp::List sample_loadings(const Rcpp::List& data, const Rcpp::NumericVector& x,
     // residual e_c = x_c - lambda_j' omega_i for each observed cell
     const int nnz = x.size();
     std::vector<double> e(nnz);
-    #pragma omp parallel for schedule(static) num_threads(mmbpfa::num_threads())
+    #pragma omp parallel for schedule(static) num_threads(mosaicfa::num_threads())
     for (int c = 0; c < nnz; c++) {
         const int j = d.col_idx[c];
         e[c] = x[c] - arma::dot(lambda.row(j), omega_t.col(d.row_idx[c]));
@@ -239,7 +239,7 @@ Rcpp::List sample_loadings(const Rcpp::List& data, const Rcpp::NumericVector& x,
     for (int k = 0; k < H; k++) {
         const double prior_prec = 1.0 / theta_in[k];
         const double logit_rho = std::log(rho[k]) - std::log1p(-rho[k]);
-        #pragma omp parallel for schedule(dynamic, 8) num_threads(mmbpfa::num_threads())
+        #pragma omp parallel for schedule(dynamic, 8) num_threads(mosaicfa::num_threads())
         for (int j = 0; j < d.p; j++) {
             const int begin = d.col_ptr[j], end = d.col_ptr[j + 1];
             const double old = lambda(j, k);
@@ -252,8 +252,8 @@ Rcpp::List sample_loadings(const Rcpp::List& data, const Rcpp::NumericVector& x,
             }
             const double prec = ww + prior_prec, mu = we / prec;
             const double lo = logit_rho + 0.5 * (std::log(prior_prec) - std::log(prec)) + 0.5 * prec * mu * mu;
-            mmbpfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter),
-                            mmbpfa::stream_id(mmbpfa::KERNEL_LOADINGS, static_cast<uint64_t>(k) * d.p + j));
+            mosaicfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter),
+                            mosaicfa::stream_id(mosaicfa::KERNEL_LOADINGS, static_cast<uint64_t>(k) * d.p + j));
             const int on = rng.unif() < inv_logit(lo);
             const double lam = on ? mu + rng.norm() / std::sqrt(prec) : 0.0;
             z(j, k) = on;
@@ -264,7 +264,7 @@ Rcpp::List sample_loadings(const Rcpp::List& data, const Rcpp::NumericVector& x,
     }
     }
 
-    mmbpfa::Rng crng = column_rng(seed, iter, 4);
+    mosaicfa::Rng crng = column_rng(seed, iter, 4);
     for (int k = 0; k < H; k++) {
         const double m = arma::accu(z.col(k));
         rho[k] = crng.beta(pr.rho_a + m, pr.rho_b + d.p - m);

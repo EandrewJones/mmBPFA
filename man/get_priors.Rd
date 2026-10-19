@@ -7,7 +7,7 @@
 get_priors(x)
 }
 \arguments{
-\item{x}{sampler output (class \code{bpfa.results}) or processed results.}
+\item{x}{sampler output (class \code{mosaicfa.results}) or processed results.}
 }
 \value{
 Named list of prior settings.
