@@ -378,3 +378,19 @@ Replicated long traces: 400 × 60, 22,000 iterations, starts 2 and 30, 4 seeds. 
 - **Cost:** 5–8% more per sweep.
 
 **Verdict.** The moves speed up the first few thousand iterations but leave late mixing unchanged, so the bottleneck is not scale. They stay opt-in and off by default. The remaining stickiness is the data-augmentation coupling: x adapts to the current columns (Johndrow et al. 2019).
+
+## 10. Mixing experiment 2: parallel tempering (rejected)
+
+Replica b targets the posterior with noise variance 1/b. The rank likelihood doesn't change under rescaling, so x~ = √b·x and λ~ = √b·λ give the ordinary model with the slab rate and spike variance multiplied by b. Each replica therefore reuses the existing kernels, and swaps need only each replica's residual sum of squares. The implementation passes the dense and sparse invariance tests, and a swap rule without the 1/b factor is caught (z = 24). The code is on branch `spike/tempering`.
+
+**Pilot:** binary_ctr2, 400 × 60, 24,000 observed cells.
+
+| Ladder | Swap acceptance |
+|---|---|
+| 1, .99, .98, .97 | .43 / .42 / .37 |
+| 1, .95, .90, .85 | 0 / 0 / 0 |
+| 1, .8, .6, .4 | 0 / 0 / 0 |
+
+**Why it fails.** The tempered density covers every latent cell. Under π_b the log-acceptance of a swap is about −nnz·δ²/2 for a relative gap δ, so adjacent temperatures must be O(1/√nnz) apart. A ladder down to b = 0.3 needs more than 100 replicas here, and thousands at recommender scale. Tempering the marginal likelihood instead (x integrated out) needs explicit thresholds, and still needs O(√(number of parameters)) replicas because Ω has N·H coordinates.
+
+**Verdict.** Not viable at the scales this package targets.
