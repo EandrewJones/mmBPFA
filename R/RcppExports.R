@@ -60,8 +60,9 @@
 #' S_i = (sum_{j in obs(i)} lambda_j lambda_j' + I)^-1, drawn through the
 #' Cholesky factor of S_i^-1. Fully observed rows share one precision matrix
 #' and are drawn together; rows missing fewer than half their items start from
-#' the shared matrix and subtract the missing items; sparser rows accumulate
-#' their observed items. Rows with no observations draw from N(0, I).
+#' the shared matrix and subtract the missing items; rows observed on fewer than
+#' K/2 items use the n_i x n_i sampler of Bhattacharya, Chakraborty & Mallick (2016);
+#' other rows accumulate their observed items. Rows with no observations draw from N(0, I).
 #'
 #' @keywords internal
 #'

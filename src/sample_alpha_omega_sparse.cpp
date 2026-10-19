@@ -105,8 +105,9 @@ arma::vec sample_alpha_sparse(const Rcpp::List& data, const Rcpp::NumericVector&
 //' S_i = (sum_{j in obs(i)} lambda_j lambda_j' + I)^-1, drawn through the
 //' Cholesky factor of S_i^-1. Fully observed rows share one precision matrix
 //' and are drawn together; rows missing fewer than half their items start from
-//' the shared matrix and subtract the missing items; sparser rows accumulate
-//' their observed items. Rows with no observations draw from N(0, I).
+//' the shared matrix and subtract the missing items; rows observed on fewer than
+//' K/2 items use the n_i x n_i sampler of Bhattacharya, Chakraborty & Mallick (2016);
+//' other rows accumulate their observed items. Rows with no observations draw from N(0, I).
 //'
 //' @keywords internal
 //'
@@ -150,6 +151,40 @@ arma::mat sample_omega_sparse(const Rcpp::List& data, const Rcpp::NumericVector&
         }
         mmbpfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter), mmbpfa::stream_id(mmbpfa::KERNEL_OMEGA, i));
         for (int k = 0; k < K; k++) z[k] = rng.norm();
+
+        if (n_i > 0 && 2 * n_i < K) {
+            // Bhattacharya, Chakraborty & Mallick (2016): with Phi = lambda_obs (n_i x K) and
+            // a = x_obs + alpha_obs, draw u ~ N(0, I_K), delta ~ N(0, I_n), solve
+            // (Phi Phi' + I_n) w = a - (Phi u + delta), return u + Phi' w. Exact, O(n_i^2 K).
+            std::vector<int> cols(n_i);
+            std::vector<double> a(n_i), w(n_i), M(n_i * n_i);
+            for (int r = 0; r < n_i; r++) {
+                const int c = d.cell_of_row[begin + r];
+                cols[r] = d.col_idx[c];
+                a[r] = x[c] + alpha[cols[r]];
+            }
+            for (int r = 0; r < n_i; r++) {
+                const double* lr = lambda_t.colptr(cols[r]);
+                double phi_u = 0;
+                for (int k = 0; k < K; k++) phi_u += lr[k] * z[k];
+                w[r] = a[r] - phi_u - rng.norm();
+                for (int q = 0; q <= r; q++) {
+                    const double* lq = lambda_t.colptr(cols[q]);
+                    double dot = 0;
+                    for (int k = 0; k < K; k++) dot += lr[k] * lq[k];
+                    M[r * n_i + q] = dot + (q == r ? 1.0 : 0.0);   // upper triangle, column r
+                }
+            }
+            if (!chol_upper(M.data(), n_i)) { failed = true; continue; }
+            solve_rt(M.data(), w.data(), n_i);
+            solve_r(M.data(), w.data(), n_i);
+            for (int r = 0; r < n_i; r++) {
+                const double* lr = lambda_t.colptr(cols[r]);
+                for (int k = 0; k < K; k++) z[k] += lr[k] * w[r];
+            }
+            omega_t.col(i) = z;
+            continue;
+        }
 
         if (full_slot[i] >= 0) {
             rhs_full.col(full_slot[i]) = rhs;

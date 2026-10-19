@@ -85,3 +85,33 @@ test_that("omega costs O(N P H) on dense data and O(nnz H^2) on sparse data", {
   expect_lt(time_omega(0), 0.06)     # was 0.40 s
   expect_lt(time_omega(0.9), 0.03)   # was 0.077 s
 })
+
+test_that("omega draws match the conditional for rows with fewer observed items than dimensions", {
+  set.seed(7)
+  n <- 30; p <- 40; K <- 10
+  lam <- matrix(rnorm(p * K, 0, 0.6), p, K); al <- rnorm(p)
+  xm <- matrix(rnorm(n * p), n, p)
+  y <- matrix(NA_real_, n, p)
+  for (i in 1:n) { o <- sample(p, 1 + (i %% 4)); y[i, o] <- xm[i, o] }   # 1 to 4 observed items per row
+  d <- prepare_data(y); x <- xm[cbind(d$row_idx + 1, d$col_idx + 1)]
+  draws <- simplify2array(lapply(1:4000, function(t) .sample_omega_sparse(d, x, lam, al, 8, t)))
+  for (i in c(1, 2, 3, 4)) {
+    o <- which(!is.na(y[i, ]))
+    S <- solve(crossprod(lam[o, , drop = FALSE]) + diag(K))
+    m <- S %*% crossprod(lam[o, , drop = FALSE], xm[i, o] + al[o])
+    expect_z(rowMeans(draws[i, , ]), as.vector(m), sqrt(diag(S) / 4000))
+    expect_rel(diag(cov(t(draws[i, , ]))), diag(S), 0.1)
+    expect_z(cov(t(draws[i, , ]))[1, 2], S[1, 2], sqrt((S[1, 1] * S[2, 2] + S[1, 2]^2) / 4000))
+  }
+})
+
+test_that("very sparse rows cost O(n_i^2 H), not O(H^3)", {
+  skip_on_cran()
+  set.seed(1); n <- 20000; p <- 1000; H <- 40
+  long <- data.frame(row = rep(1:n, each = 3), col = as.vector(replicate(n, sample(p, 3))), value = rbinom(3 * n, 1, 0.5))
+  d <- prepare_data(long, n = n, p = p); x <- initial_x(d)
+  lam <- matrix(rnorm(p * H, 0, 0.3), p, H); al <- rnorm(p)
+  t0 <- proc.time()[["elapsed"]]
+  for (r in 1:3) .sample_omega_sparse(d, x, lam, al, 1, r)
+  expect_lt((proc.time()[["elapsed"]] - t0) / 3, 0.05)
+})
