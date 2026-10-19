@@ -37,7 +37,7 @@ mmBPFA_sampler(
 
 \item{n_cores}{Number of chains run in parallel.}
 
-\item{threads}{Reserved for within-chain parallelism.}
+\item{threads}{Threads used inside each chain (OpenMP). Results do not depend on it.}
 
 \item{seed}{Random seed; chain c uses \code{seed + c - 1}.}
 }

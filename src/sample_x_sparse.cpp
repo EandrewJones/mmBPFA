@@ -4,6 +4,7 @@
 #include <vector>
 #include "data_structure.h"
 #include "rng.h"
+#include "threads.h"
 
 //' Sample latent x for every observed cell
 //'
@@ -29,6 +30,7 @@ Rcpp::NumericVector sample_x_sparse(const Rcpp::List& data, const Rcpp::NumericV
     const arma::mat omega_t = omega.t();     // K x N: one contiguous column per row
     Rcpp::NumericVector out = Rcpp::clone(x);
 
+    #pragma omp parallel for schedule(dynamic, 8) num_threads(mmbpfa::num_threads())
     for (int j = 0; j < d.p; j++) {
         const int L = d.n_levels[j];
         if (L == 0) continue;

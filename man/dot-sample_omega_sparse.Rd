@@ -23,6 +23,9 @@ N x K matrix.
 \description{
 omega_i ~ N(S_i sum_{j in obs(i)} lambda_j (x_ij + alpha_j), S_i) with
 S_i = (sum_{j in obs(i)} lambda_j lambda_j' + I)^-1, drawn through the
-Cholesky factor of S_i^-1. Rows with no observations draw from N(0, I).
+Cholesky factor of S_i^-1. Fully observed rows share one precision matrix
+and are drawn together; rows missing fewer than half their items start from
+the shared matrix and subtract the missing items; sparser rows accumulate
+their observed items. Rows with no observations draw from N(0, I).
 }
 \keyword{internal}

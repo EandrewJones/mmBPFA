@@ -19,7 +19,7 @@
 #' @param thin Keep every \code{thin}-th sampling iteration.
 #' @param chains Number of chains.
 #' @param n_cores Number of chains run in parallel.
-#' @param threads Reserved for within-chain parallelism.
+#' @param threads Threads used inside each chain (OpenMP). Results do not depend on it.
 #' @param seed Random seed; chain c uses \code{seed + c - 1}.
 #'
 #' @return Object of class \code{bpfa.results}: a list with one element per chain,
@@ -53,7 +53,7 @@ mmBPFA_sampler <- function(
         K_start <- prior$H
     }
 
-    run <- function(chain) run_one_chain(data, prior, K_start, warmup, iter, thin, seed + chain - 1)
+    run <- function(chain) run_one_chain(data, prior, K_start, warmup, iter, thin, seed + chain - 1, threads)
     chain_out <- if (chains == 1 || n_cores == 1) {
         lapply(seq_len(chains), run)
     } else if (.Platform$OS.type == "windows") {
@@ -76,7 +76,7 @@ mmBPFA_sampler <- function(
 #' Run one chain from a seeded starting point
 #'
 #' @keywords internal
-run_one_chain <- function(data, prior, K_start, warmup, iter, thin, seed) {
+run_one_chain <- function(data, prior, K_start, warmup, iter, thin, seed, threads = 1) {
     set.seed(seed)
     H <- prior$H; p <- data$p; n <- data$n
     on <- seq_len(H) <= K_start
@@ -92,7 +92,7 @@ run_one_chain <- function(data, prior, K_start, warmup, iter, thin, seed) {
         theta = ifelse(on, 1, prior$spike_var)
     )
     omega <- matrix(rnorm(n * H), n, H)
-    .run_chain(data, initial_x(data), state, omega, rep(0, p), prior, warmup, iter, thin, seed)
+    .run_chain(data, initial_x(data), state, omega, rep(0, p), prior, warmup, iter, thin, seed, threads)
 }
 
 

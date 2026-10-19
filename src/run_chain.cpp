@@ -4,6 +4,7 @@
 #include <vector>
 #include "data_structure.h"
 #include "kernels.h"
+#include "threads.h"
 
 namespace {
 
@@ -34,23 +35,28 @@ std::vector<double> level_thresholds(const mmbpfa::Data& d, const Rcpp::NumericV
 double log_likelihood(const mmbpfa::Data& d, const std::vector<double>& th, const arma::mat& lambda,
                       const arma::mat& omega, const arma::vec& alpha) {
     const arma::mat omega_t = omega.t();
-    double ll = 0;
-    int offset = 0;                          // start of column j's thresholds in th
+    std::vector<int> offset(d.p + 1, 0);     // start of column j's thresholds in th
+    for (int j = 0; j < d.p; j++) offset[j + 1] = offset[j] + std::max(d.n_levels[j] - 1, 0);
+    std::vector<double> ll_col(d.p, 0.0);
+    #pragma omp parallel for schedule(dynamic, 8) num_threads(mmbpfa::num_threads())
     for (int j = 0; j < d.p; j++) {
         const int L = d.n_levels[j];
+        double ll = 0;
         if (L >= 2) {
             const arma::rowvec lam_j = lambda.row(j);
             for (int v = 0; v < L; v++) {
-                const double lo = v > 0 ? th[offset + v - 1] : R_NegInf;
-                const double hi = v + 1 < L ? th[offset + v] : R_PosInf;
+                const double lo = v > 0 ? th[offset[j] + v - 1] : R_NegInf;
+                const double hi = v + 1 < L ? th[offset[j] + v] : R_PosInf;
                 for (int c = d.level_begin(j, v); c < d.level_begin(j, v + 1); c++) {
                     const double mu = arma::dot(lam_j, omega_t.col(d.row_idx[c])) - alpha[j];
                     ll += log_interval_prob(lo - mu, hi - mu);
                 }
             }
         }
-        offset += std::max(L - 1, 0);
+        ll_col[j] = ll;
     }
+    double ll = 0;
+    for (int j = 0; j < d.p; j++) ll += ll_col[j];   // fixed order: independent of threads
     return ll;
 }
 
@@ -67,12 +73,14 @@ double log_likelihood(const mmbpfa::Data& d, const std::vector<double>& th, cons
 //' @param prior resolved priors.
 //' @param warmup,iter,thin numbers of warmup and sampling iterations, and thinning.
 //' @param seed chain seed.
+//' @param threads OpenMP threads used inside the chain.
 //'
 //' @return List of kept draws and summaries.
 // [[Rcpp::export(name = ".run_chain")]]
 Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List state0,
                      arma::mat omega0, arma::vec alpha0, const Rcpp::List& prior,
-                     int warmup, int iter, int thin, double seed) {
+                     int warmup, int iter, int thin, double seed, int threads) {
+    mmbpfa::num_threads() = threads < 1 ? 1 : threads;
     const mmbpfa::Data d(data);
     Rcpp::NumericVector x = Rcpp::clone(x0);
     Rcpp::List state = state0;

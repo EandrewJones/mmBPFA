@@ -4,7 +4,19 @@
 \alias{.run_chain}
 \title{Run one chain}
 \usage{
-.run_chain(data, x0, state0, omega0, alpha0, prior, warmup, iter, thin, seed)
+.run_chain(
+  data,
+  x0,
+  state0,
+  omega0,
+  alpha0,
+  prior,
+  warmup,
+  iter,
+  thin,
+  seed,
+  threads
+)
 }
 \arguments{
 \item{data}{output of \code{prepare_data}.}
@@ -20,6 +32,8 @@
 \item{warmup, iter, thin}{numbers of warmup and sampling iterations, and thinning.}
 
 \item{seed}{chain seed.}
+
+\item{threads}{OpenMP threads used inside the chain.}
 }
 \value{
 List of kept draws and summaries.

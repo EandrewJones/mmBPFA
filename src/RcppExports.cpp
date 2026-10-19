@@ -40,8 +40,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // run_chain
-Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List state0, arma::mat omega0, arma::vec alpha0, const Rcpp::List& prior, int warmup, int iter, int thin, double seed);
-RcppExport SEXP _mmBPFA_run_chain(SEXP dataSEXP, SEXP x0SEXP, SEXP state0SEXP, SEXP omega0SEXP, SEXP alpha0SEXP, SEXP priorSEXP, SEXP warmupSEXP, SEXP iterSEXP, SEXP thinSEXP, SEXP seedSEXP) {
+Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List state0, arma::mat omega0, arma::vec alpha0, const Rcpp::List& prior, int warmup, int iter, int thin, double seed, int threads);
+RcppExport SEXP _mmBPFA_run_chain(SEXP dataSEXP, SEXP x0SEXP, SEXP state0SEXP, SEXP omega0SEXP, SEXP alpha0SEXP, SEXP priorSEXP, SEXP warmupSEXP, SEXP iterSEXP, SEXP thinSEXP, SEXP seedSEXP, SEXP threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -55,7 +55,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type iter(iterSEXP);
     Rcpp::traits::input_parameter< int >::type thin(thinSEXP);
     Rcpp::traits::input_parameter< double >::type seed(seedSEXP);
-    rcpp_result_gen = Rcpp::wrap(run_chain(data, x0, state0, omega0, alpha0, prior, warmup, iter, thin, seed));
+    Rcpp::traits::input_parameter< int >::type threads(threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(run_chain(data, x0, state0, omega0, alpha0, prior, warmup, iter, thin, seed, threads));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -188,11 +189,31 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// openmp_available
+bool openmp_available();
+RcppExport SEXP _mmBPFA_openmp_available() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(openmp_available());
+    return rcpp_result_gen;
+END_RCPP
+}
+// set_threads
+void set_threads(int n);
+RcppExport SEXP _mmBPFA_set_threads(SEXP nSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    set_threads(n);
+    return R_NilValue;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_mmBPFA_rng_draws", (DL_FUNC) &_mmBPFA_rng_draws, 4},
     {"_mmBPFA_rng_stream", (DL_FUNC) &_mmBPFA_rng_stream, 4},
-    {"_mmBPFA_run_chain", (DL_FUNC) &_mmBPFA_run_chain, 10},
+    {"_mmBPFA_run_chain", (DL_FUNC) &_mmBPFA_run_chain, 11},
     {"_mmBPFA_sample_alpha_sparse", (DL_FUNC) &_mmBPFA_sample_alpha_sparse, 6},
     {"_mmBPFA_sample_omega_sparse", (DL_FUNC) &_mmBPFA_sample_omega_sparse, 6},
     {"_mmBPFA_sample_column_indicators", (DL_FUNC) &_mmBPFA_sample_column_indicators, 6},
@@ -201,6 +222,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mmBPFA_sample_theta", (DL_FUNC) &_mmBPFA_sample_theta, 6},
     {"_mmBPFA_sample_loadings", (DL_FUNC) &_mmBPFA_sample_loadings, 8},
     {"_mmBPFA_sample_x_sparse", (DL_FUNC) &_mmBPFA_sample_x_sparse, 7},
+    {"_mmBPFA_openmp_available", (DL_FUNC) &_mmBPFA_openmp_available, 0},
+    {"_mmBPFA_set_threads", (DL_FUNC) &_mmBPFA_set_threads, 1},
     {NULL, NULL, 0}
 };
 

@@ -6,6 +6,7 @@
 #include <vector>
 #include "data_structure.h"
 #include "rng.h"
+#include "threads.h"
 
 namespace {
 
@@ -208,10 +209,13 @@ Rcpp::List sample_loadings(const Rcpp::List& data, const Rcpp::NumericVector& x,
             const double ww = arma::dot(w, w), prior_prec = 1.0 / theta_in[k], prec = ww + prior_prec;
             const double logit_rho = std::log(rho[k]) - std::log1p(-rho[k]);
             const arma::vec old = lambda.col(k);
-            const arma::vec g = E.t() * w + old * ww;
             arma::vec delta(d.p);
+            #pragma omp parallel for schedule(static) num_threads(mmbpfa::num_threads())
             for (int j = 0; j < d.p; j++) {
-                const double mu = g[j] / prec;
+                const double* ej = E.colptr(j);
+                double g = 0;
+                for (int i = 0; i < d.n; i++) g += ej[i] * w[i];
+                const double mu = (g + old[j] * ww) / prec;
                 const double lo = logit_rho + 0.5 * (std::log(prior_prec) - std::log(prec)) + 0.5 * prec * mu * mu;
                 mmbpfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter),
                                 mmbpfa::stream_id(mmbpfa::KERNEL_LOADINGS, static_cast<uint64_t>(k) * d.p + j));
@@ -220,13 +224,15 @@ Rcpp::List sample_loadings(const Rcpp::List& data, const Rcpp::NumericVector& x,
                 z(j, k) = on;
                 lambda(j, k) = lam;
                 delta[j] = old[j] - lam;
+                double* ejw = E.colptr(j);
+                for (int i = 0; i < d.n; i++) ejw[i] += w[i] * delta[j];
             }
-            E += w * delta.t();
         }
     } else {
     // residual e_c = x_c + alpha_j - lambda_j' omega_i for each observed cell
     const int nnz = x.size();
     std::vector<double> e(nnz);
+    #pragma omp parallel for schedule(static) num_threads(mmbpfa::num_threads())
     for (int c = 0; c < nnz; c++) {
         const int j = d.col_idx[c];
         e[c] = x[c] + alpha[j] - arma::dot(lambda.row(j), omega_t.col(d.row_idx[c]));
@@ -235,6 +241,7 @@ Rcpp::List sample_loadings(const Rcpp::List& data, const Rcpp::NumericVector& x,
     for (int k = 0; k < H; k++) {
         const double prior_prec = 1.0 / theta_in[k];
         const double logit_rho = std::log(rho[k]) - std::log1p(-rho[k]);
+        #pragma omp parallel for schedule(dynamic, 8) num_threads(mmbpfa::num_threads())
         for (int j = 0; j < d.p; j++) {
             const int begin = d.col_ptr[j], end = d.col_ptr[j + 1];
             const double old = lambda(j, k);

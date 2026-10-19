@@ -20,10 +20,11 @@
 #' @param prior resolved priors.
 #' @param warmup,iter,thin numbers of warmup and sampling iterations, and thinning.
 #' @param seed chain seed.
+#' @param threads OpenMP threads used inside the chain.
 #'
 #' @return List of kept draws and summaries.
-.run_chain <- function(data, x0, state0, omega0, alpha0, prior, warmup, iter, thin, seed) {
-    .Call(`_mmBPFA_run_chain`, data, x0, state0, omega0, alpha0, prior, warmup, iter, thin, seed)
+.run_chain <- function(data, x0, state0, omega0, alpha0, prior, warmup, iter, thin, seed, threads) {
+    .Call(`_mmBPFA_run_chain`, data, x0, state0, omega0, alpha0, prior, warmup, iter, thin, seed, threads)
 }
 
 #' Sample item intercepts from observed cells
@@ -48,7 +49,10 @@
 #'
 #' omega_i ~ N(S_i sum_{j in obs(i)} lambda_j (x_ij + alpha_j), S_i) with
 #' S_i = (sum_{j in obs(i)} lambda_j lambda_j' + I)^-1, drawn through the
-#' Cholesky factor of S_i^-1. Rows with no observations draw from N(0, I).
+#' Cholesky factor of S_i^-1. Fully observed rows share one precision matrix
+#' and are drawn together; rows missing fewer than half their items start from
+#' the shared matrix and subtract the missing items; sparser rows accumulate
+#' their observed items. Rows with no observations draw from N(0, I).
 #'
 #' @keywords internal
 #'
@@ -127,5 +131,17 @@
 #' @return New latent values, one per observed cell.
 .sample_x_sparse <- function(data, x, lambda, omega, alpha, seed, iter) {
     .Call(`_mmBPFA_sample_x_sparse`, data, x, lambda, omega, alpha, seed, iter)
+}
+
+#' Whether the package was built with OpenMP
+#' @keywords internal
+.openmp_available <- function() {
+    .Call(`_mmBPFA_openmp_available`)
+}
+
+#' Set the number of threads used inside a chain
+#' @keywords internal
+.set_threads <- function(n) {
+    invisible(.Call(`_mmBPFA_set_threads`, n))
 }
 

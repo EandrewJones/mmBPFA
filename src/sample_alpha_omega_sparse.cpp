@@ -2,6 +2,7 @@
 #include <RcppArmadillo.h>
 #include "data_structure.h"
 #include "rng.h"
+#include "threads.h"
 
 namespace {
 
@@ -43,6 +44,18 @@ void solve_r(const double* R, double* b, int K) {
     }
 }
 
+// add (sign = +1) or remove (sign = -1) lambda_j lambda_j' in the upper triangle
+void accumulate_outer(arma::mat& prec, const arma::mat& lambda_t, int j, double sign) {
+    const int K = prec.n_rows;
+    const double* l = lambda_t.colptr(j);
+    for (int b = 0; b < K; b++) {
+        const double lb = sign * l[b];
+        if (lb == 0) continue;
+        double* col = prec.colptr(b);
+        for (int a = 0; a <= b; a++) col[a] += l[a] * lb;
+    }
+}
+
 } // namespace
 
 
@@ -68,6 +81,7 @@ arma::vec sample_alpha_sparse(const Rcpp::List& data, const Rcpp::NumericVector&
     const arma::mat omega_t = omega.t();
     const arma::rowvec omega_sum = arma::sum(omega, 0);   // sum_i omega_i, for fully observed items
     arma::vec alpha(d.p, arma::fill::zeros);
+    #pragma omp parallel for schedule(static) num_threads(mmbpfa::num_threads())
     for (int j = 0; j < d.p; j++) {
         const int begin = d.col_ptr[j], end = d.col_ptr[j + 1], n_j = end - begin;
         if (n_j == 0) continue;
@@ -114,26 +128,20 @@ arma::mat sample_omega_sparse(const Rcpp::List& data, const Rcpp::NumericVector&
     arma::mat G_full = lambda.t() * lambda;      // shared precision of a fully observed row
     G_full.diag() += 1.0;
 
-    // add (sign = +1) or remove (sign = -1) lambda_j lambda_j' in the upper triangle
-    auto accumulate = [&](arma::mat& prec, int j, double sign) {
-        const double* l = lambda_t.colptr(j);
-        for (int b = 0; b < K; b++) {
-            const double lb = sign * l[b];
-            if (lb == 0) continue;
-            double* col = prec.colptr(b);
-            for (int a = 0; a <= b; a++) col[a] += l[a] * lb;
-        }
-    };
+    // fully observed rows are drawn together; give each a slot first
+    std::vector<int> full_slot(d.n, -1), full_rows;
+    for (int i = 0; i < d.n; i++)
+        if (d.row_ptr[i + 1] - d.row_ptr[i] == d.p) { full_slot[i] = full_rows.size(); full_rows.push_back(i); }
+    const int nf = full_rows.size();
 
     arma::mat omega_t(K, d.n);
-    std::vector<int> full_rows;
-    arma::mat rhs_full(K, d.n), z_full(K, d.n);
-    arma::mat prec(K, K);
-    arma::vec rhs(K), z(K);
+    arma::mat rhs_full(K, nf), z_full(K, nf);
+    bool failed = false;
 
+    #pragma omp parallel for schedule(dynamic, 16) num_threads(mmbpfa::num_threads())
     for (int i = 0; i < d.n; i++) {
         const int begin = d.row_ptr[i], end = d.row_ptr[i + 1], n_i = end - begin;
-        rhs.zeros();
+        arma::vec rhs(K, arma::fill::zeros), z(K);
         for (int r = begin; r < end; r++) {
             const int c = d.cell_of_row[r], j = d.col_idx[c];
             const double w = x[c] + alpha[j];
@@ -143,36 +151,35 @@ arma::mat sample_omega_sparse(const Rcpp::List& data, const Rcpp::NumericVector&
         mmbpfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter), mmbpfa::stream_id(mmbpfa::KERNEL_OMEGA, i));
         for (int k = 0; k < K; k++) z[k] = rng.norm();
 
-        if (n_i == d.p) {
-            rhs_full.col(full_rows.size()) = rhs;
-            z_full.col(full_rows.size()) = z;
-            full_rows.push_back(i);
+        if (full_slot[i] >= 0) {
+            rhs_full.col(full_slot[i]) = rhs;
+            z_full.col(full_slot[i]) = z;
             continue;
         }
+        arma::mat prec(K, K);
         if (2 * n_i > d.p) {
             prec = G_full;                      // subtract the missing items
             int r = begin;
             for (int j = 0; j < d.p; j++) {
                 if (r < end && d.col_idx[d.cell_of_row[r]] == j) { r++; continue; }
-                accumulate(prec, j, -1.0);
+                accumulate_outer(prec, lambda_t, j, -1.0);
             }
         } else {
             prec.eye();                         // add the observed items
-            for (int r = begin; r < end; r++) accumulate(prec, d.col_idx[d.cell_of_row[r]], 1.0);
+            for (int r = begin; r < end; r++) accumulate_outer(prec, lambda_t, d.col_idx[d.cell_of_row[r]], 1.0);
         }
         // prec = R'R; draw = R^-1 (R'^-1 rhs + z), i.e. mean prec^-1 rhs plus N(0, prec^-1)
-        if (!chol_upper(prec.memptr(), K)) Rcpp::stop("factor-score precision is not positive definite");
+        if (!chol_upper(prec.memptr(), K)) { failed = true; continue; }
         solve_rt(prec.memptr(), rhs.memptr(), K);
         rhs += z;
         solve_r(prec.memptr(), rhs.memptr(), K);
         omega_t.col(i) = rhs;
     }
+    if (failed) Rcpp::stop("factor-score precision is not positive definite");
 
-    if (!full_rows.empty()) {
-        const int nf = full_rows.size();
+    if (nf > 0) {
         const arma::mat R = arma::chol(arma::symmatu(G_full));
-        const arma::mat B = rhs_full.head_cols(nf), Z = z_full.head_cols(nf);
-        const arma::mat draws = arma::solve(arma::trimatu(R), arma::solve(arma::trimatl(R.t()), B) + Z);
+        const arma::mat draws = arma::solve(arma::trimatu(R), arma::solve(arma::trimatl(R.t()), rhs_full) + z_full);
         for (int f = 0; f < nf; f++) omega_t.col(full_rows[f]) = draws.col(f);
     }
     return omega_t.t();

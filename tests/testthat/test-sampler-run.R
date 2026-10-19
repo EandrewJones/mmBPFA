@@ -65,3 +65,15 @@ test_that("socket-cluster chains (the Windows path) run", {
                             resolve_priors("uniform", ncol(y)), 4, 3, 6, 1, 3 + chain))
   expect_length(out, 2)
 })
+
+test_that("within-chain threads do not change the draws", {
+  skip_if_not(.openmp_available(), "built without OpenMP")
+  for (miss in c(0, 0.5)) {
+    y <- small_binary(n = 120, p = 40); y[matrix(runif(length(y)) < miss, nrow(y))] <- NA
+    one <- quiet_run(y, K_start = 4, warmup = 5, iter = 10, thin = 1, threads = 1, seed = 11)
+    four <- quiet_run(y, K_start = 4, warmup = 5, iter = 10, thin = 1, threads = 4, seed = 11)
+    expect_identical(one[[1]]$lambda, four[[1]]$lambda)
+    expect_identical(one[[1]]$omega, four[[1]]$omega)
+    expect_identical(one[[1]]$log_lik, four[[1]]$log_lik)
+  }
+})
