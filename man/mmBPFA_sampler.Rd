@@ -2,56 +2,61 @@
 % Please edit documentation in R/mmBPFA_sampler.R
 \name{mmBPFA_sampler}
 \alias{mmBPFA_sampler}
-\title{mmBPFA Gibbs sampler function}
+\title{mmBPFA Gibbs sampler}
 \usage{
 mmBPFA_sampler(
   dat,
-  mode,
-  share_noise = FALSE,
-  K_start = 100,
-  pre_sparse = 100,
+  priors = "uniform",
+  H = NULL,
+  K_start = 10,
   warmup = 1000,
   iter = 5000,
   thin = 5,
   chains = 1,
-  parallel = FALSE,
   n_cores = 1,
-  seed = 101473,
-  benchmark = FALSE
+  threads = 1,
+  seed = 101473
 )
 }
 \arguments{
-\item{dat}{Data matrix.}
+\item{dat}{Numeric data matrix (N x P); NA marks a missing cell.}
 
-\item{mode}{Sets the type of margins for the simulated data. Must be one of "fixed", "multi" or "mixed." Default is "fixed."}
+\item{priors}{A preset name or a list of prior settings; see \code{\link{resolve_priors}}.}
 
-\item{share_noise}{Boolean indicating whether to sample the d hyperparameter for the factor precision draws. Setting to TRUE allows for more accurate dimension-varying precisions but takes longer to mix. Default is FALSE.}
+\item{H}{Truncation: maximum number of columns. Default min(floor((P - 1) / 2), 50).}
 
-\item{K_start}{Number of dimensions K to initialize sampler with. Default is 100.}
+\item{K_start}{Number of columns switched on at the start. Capped at H.}
 
-\item{pre_sparse}{Number of iterations sampler should take prior to turning on the beta-process prior. A minimum of 100 is suggested as a default to improve mixing and avoid the posterior dimensionality from collapsing to zero.}
+\item{warmup}{Number of warmup iterations.}
 
-\item{warmup}{Number of burnin iterations. Default 1000.}
+\item{iter}{Number of sampling iterations after warmup.}
 
-\item{iter}{Number of posterior draws. 1000 draws usually suffices if runtime is an issue. Default is 5000.}
+\item{thin}{Keep every \code{thin}-th sampling iteration.}
 
-\item{thin}{Indicates how often posterior draws should be stored. Simulations suggest autocorrelation is present up to 5 lags, but tapers off at around 3. Defaults to 5 to minimize autocorrelation.}
+\item{chains}{Number of chains.}
 
-\item{chains}{Number of chains to run. Implementation currently only allows for a single chain. Default is 1.}
+\item{n_cores}{Number of chains run in parallel.}
 
-\item{parallel}{Boolean indicating whether to use parallel processing for multiple chain runs. Default is FALSE.}
+\item{threads}{Reserved for within-chain parallelism.}
 
-\item{n_cores}{Number of cores to use for parallel chain runs.}
-
-\item{seed}{Random seed.}
-
-\item{benchmark}{Boolean indicating whether to return benchmark timings of each sampling step. Primarily used for development purposes if user wants to further optimize the sampler for improved runtime. Default is FALSE.}
+\item{seed}{Random seed; chain c uses \code{seed + c - 1}.}
 }
 \value{
-S3 object of class \code{bpfa.results} containing log-likelihoods, number of sampled dimensions at each step, and the posterior draws.
+Object of class \code{bpfa.results}: a list with one element per chain,
+each holding the kept draws (\code{lambda}, \code{z}, \code{c}, \code{omega},
+\code{alpha}, \code{theta}, \code{a_cusp}), the number of counted dimensions
+\code{K} and the log-likelihood \code{log_lik} per draw, and posterior-mean level
+\code{thresholds}. Attributes record the priors (see \code{\link{get_priors}})
+and the run settings.
 }
 \description{
-\code{mmBPFA_sampler} is the primary functional interface for the mmBPFA package.
-The sampler estimates a latent posterior distribution from the data using a Gibbs sampling procedure.
-Each conditional sampling step is written in C++ for improved sampling speed.
+\code{mmBPFA_sampler} fits the Gaussian-copula factor model with the
+extended rank likelihood (Hoff 2007), so any mix of binary, ordinal, count
+and continuous items can be analysed without modelling their margins. The
+number of dimensions is learned with a cumulative shrinkage prior over
+columns (Legramanti, Durante & Dunson 2020), and each item's inclusion on
+each dimension is learned within columns (Schiavon, Canale & Dunson 2022).
+Only observed cells are used: missing cells are treated as missing at random
+and are never imputed, so the cost of a sweep scales with the number of
+observed cells.
 }

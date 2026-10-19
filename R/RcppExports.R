@@ -9,18 +9,21 @@
     .Call(`_mmBPFA_rng_stream`, seed, iter, stream, n)
 }
 
-#' Sampling step for alpha (item-intercepts)
+#' Run one chain
 #'
 #' @keywords internal
 #'
-#' @param x A multivariate Gaussian copula matrix of dimenion N x P.
-#' @param lambda A standard multivariate normal matrix of factor loadings of dimension P x K.
-#' @param omega A standard multivariate normal matrix of factor scores of dimenion N x K.
+#' @param data output of \code{prepare_data}.
+#' @param x0 starting latent values (rank consistent, see \code{initial_x}).
+#' @param state0 starting loadings state (see \code{.sample_loadings}).
+#' @param omega0,alpha0 starting factor scores and intercepts.
+#' @param prior resolved priors.
+#' @param warmup,iter,thin numbers of warmup and sampling iterations, and thinning.
+#' @param seed chain seed.
 #'
-#' @return alpha Numeric vector of item-intercepts of length P.
-#'
-sample_alpha <- function(x, lambda, omega) {
-    .Call(`_mmBPFA_sample_alpha`, x, lambda, omega)
+#' @return List of kept draws and summaries.
+.run_chain <- function(data, x0, state0, omega0, alpha0, prior, warmup, iter, thin, seed) {
+    .Call(`_mmBPFA_run_chain`, data, x0, state0, omega0, alpha0, prior, warmup, iter, thin, seed)
 }
 
 #' Sample item intercepts from observed cells
@@ -58,95 +61,6 @@ sample_alpha <- function(x, lambda, omega) {
 #' @return N x K matrix.
 .sample_omega_sparse <- function(data, x, lambda, alpha, seed, iter) {
     .Call(`_mmBPFA_sample_omega_sparse`, data, x, lambda, alpha, seed, iter)
-}
-
-#' Sampling step for gamma_k (factor precisions)
-#'
-#' @keywords internal
-#'
-#' @param zeros A binary, sparsity inducing matrix of dimenion P x K.
-#' @param lambda A standard multivariate normal matrix of factor loadings of dimension P x K.
-#' @param c A tunable hyperparameter for the shape parameter of the gamma draw. Default is 1, a proper prior that matches the shape used when sampling d.
-#' @param d A tunable hyperparameter for the inverse-scale (rate) parameter of the gamma draw. Default is 100
-#'
-#' @return gamma_k Numeric vector of factor precisions of length K.
-#'
-sample_gamma_k <- function(zeros, lambda, c = 1, d = 100) {
-    .Call(`_mmBPFA_sample_gamma_k`, zeros, lambda, c, d)
-}
-
-#' Sampling step for d (hyperparameter for sample_gamma_k)
-#'
-#' @keywords internal
-#'
-#' @param zeros A binary, sparsity inducing matrix of dimenion P x K.
-#' @param gamma_k A gamma-distributed vector of factor precisions of length K.
-#' @param c A tunable hyperparameter for the shape parameter of the gamma draw. Default is 1.
-#' @param c0 A tunable hyperparameter for the shape parameter of the gamma draw.
-#' @param d0 A tunable hyperparameter for the inverse-scale (rate) parameter of the gamma draw.
-#'
-#' @return scalar double
-#'
-sample_d <- function(zeros, gamma_k, c, c0, d0) {
-    .Call(`_mmBPFA_sample_d`, zeros, gamma_k, c, c0, d0)
-}
-
-#' Sampling step for Indian Buffet Process Alpha Parameter
-#'
-#' @keywords internal
-#'
-#' @param ibp_b A scalar double, Indian Buffet Process beta parameter.
-#' @param zeros A binary, sparsity inducing matrix of dimenion P x K.
-#' @param e A scalar double, tunable hyperparameter for the shape parameter of the gamma draw. Default is 1.
-#' @param f A scalar double, tunable hyperparameter for the rate parameter of the gamma draw. Default is 1.
-#'
-#' @return ibp_a Scalar double, Indian Buffet Process alpha parameter.
-#'
-sample_IBP_a <- function(ibp_b, zeros, e = 1, f = 1) {
-    .Call(`_mmBPFA_sample_IBP_a`, ibp_b, zeros, e, f)
-}
-
-#' Metropolis-Hastings sampling step for Indian Buffet Process Beta Parameter
-#'
-#' @keywords internal
-#'
-#' @param ibp_a A scalar double, Indian Buffet Process alpha parameter.
-#' @param ibp_b A scalar double, prior Indian Buffet Process Beta parameter .
-#' @param zeros A binary, sparsity inducing matrix of dimenion P x K.
-#'
-#' @return ibp_b Scalar double, Indian Buffet Process beta parameter.
-#'
-sample_IBP_b <- function(ibp_a, ibp_b, zeros) {
-    .Call(`_mmBPFA_sample_IBP_b`, ibp_a, ibp_b, zeros)
-}
-
-.feature_loglik_ratio <- function(e, lambda) {
-    .Call(`_mmBPFA_feature_loglik_ratio_r`, e, lambda)
-}
-
-#' Sampling step for lambda and binary, sparsity-inducing zero matrix
-#'
-#' @keywords internal
-#'
-#' @param x A multivariate Gaussian copula matrix of dimenion N x P.
-#' @param lambda A standard multivariate normal matrix of factor loadings of dimension P x K.
-#' @param zeros A binary, sparsity inducing matrix of dimenion P x K.
-#' @param omega A standard multivariate normal matrix of factor scores of dimenion N x K.
-#' @param alpha A numeric vector of item-intercepts of length P.
-#' @param gamma_k A numeric vector of factor precisions of length K.
-#' @param dc A integer vector of counts for the number of times each dimensions has been sampled.
-#' @param ibp_a A scalar double, Indian Buffet Process alpha parameter.
-#' @param ibp_b A scalar double, Indian Buffet Process beta parameter.
-#' @param tau A tunable hyperparameter for the poisson draws of new dishes to be sampled.
-#' @param sparse A boolean indicating whether to include sparsity-inducing prior.
-#' @param infinite A boolen indicating whether to sample new potential dishes at each step.
-#'
-#' @return zeros A binary, sparsity inducing matrix of dimenion P x K.
-#' @return lambda A standard multivariate normal matrix of factor loadings of dimension P x K.
-#' @return dc A integer vector of counts for the number of times each dimensions has been sampled.
-#'
-sample_lambda_and_zeros <- function(x, lambda, zeros, omega, alpha, gamma_k, dc, ibp_a, ibp_b, tau, sparse, infinite) {
-    .Call(`_mmBPFA_sample_lambda_and_zeros`, x, lambda, zeros, omega, alpha, gamma_k, dc, ibp_a, ibp_b, tau, sparse, infinite)
 }
 
 #' Sample column indicators of the cumulative shrinkage prior (test entry point)
@@ -193,20 +107,6 @@ sample_lambda_and_zeros <- function(x, lambda, zeros, omega, alpha, gamma_k, dc,
 #' @return Updated state.
 .sample_loadings <- function(data, x, omega, alpha, state, prior, seed, iter) {
     .Call(`_mmBPFA_sample_loadings`, data, x, omega, alpha, state, prior, seed, iter)
-}
-
-#' Sampling step for omega matrix (Factor Scores) of dimension N x K.
-#'
-#' @keywords internal
-#'
-#' @param lambda A standard multivariate normal matrix of factor loadings of dimension P x K.
-#' @param x A multivariate Gaussian copula matrix of dimenion N x P.
-#' @param alpha A numeric vector of item-intercepts of length P.
-#'
-#' @return omega A multivariate Gaussian matrix of factor scores of dimension N x K.
-#'
-sample_omega <- function(lambda, x, alpha) {
-    .Call(`_mmBPFA_sample_omega`, lambda, x, alpha)
 }
 
 #' Sample latent x for every observed cell

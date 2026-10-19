@@ -4,17 +4,17 @@
 \alias{run_chains_psock}
 \title{Run chains on a socket cluster}
 \usage{
-run_chains_psock(chains, n_cores, chain_args)
+run_chains_psock(chains, n_cores, chain_fun)
 }
 \arguments{
 \item{chains}{Number of chains.}
 
 \item{n_cores}{Number of worker processes.}
 
-\item{chain_args}{Named list of arguments passed to \code{chain_call}.}
+\item{chain_fun}{Function of the chain index returning one chain's output.}
 }
 \value{
-List with one \code{chain_call} result per chain.
+List with one element per chain.
 }
 \description{
 Used for parallel chains on Windows, where forking is unavailable.

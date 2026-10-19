@@ -281,7 +281,19 @@ Two data seeds per setting, starts at 2, 10 and 30, 2,000 iterations.
 
 - E3's higher rate of K changes is churn among weak columns, not useful mixing: it comes with over-counting and a worse item map.
 - **Against baseline A on identical data:** C's item-map F1 is equal or better in all 8 settings (criterion 3 passes). Its correlation error is within 0.005 in 6 of 8 settings. It misses criterion 4 only at K = 2, P = 60, by 0.006–0.007, which is attributed to its non-negligible spike (sd ≈ 0.22).
-- Pending: C with absolute spike sd 0.05 and 0.02; E3 with spike sd 0.02 and 0.01.
+**Spike-width ablations.**
+
+| Candidate | Starts within 1 | Median K exact | F1 | Correlation error within 0.005 of baseline | K-change rate |
+|---|---|---|---|---|---|
+| C, spike variance 0.05 | 100% | 81% | 0.80 | 6/8 | 0.25 |
+| C, spike sd 0.05 | 44% | 65% | 0.78 | 7/8 | 0.08 |
+| C, spike sd 0.02 | 31% | 54% | 0.74 | 4/8 | 0.07 |
+| E3, spike sd 0.05 / 0.02 / 0.01 | 56–75% | 21–29% | 0.70–0.72 | 8/8 | 0.29–0.56 |
+
+- A narrow spike freezes K, the Kowal–Canale "stuck K" failure: columns with real loadings can't move into it.
+- **Decision (Task 1):** C with spike variance 0.05.
+
+**Caveat found during implementation.** The spike harness drew the CUSP concentration given the sticks. Once every column is off, the sticks round to 1 and the concentration to exactly 0, which makes K = 0 absorbing in floating point. The package draws the concentration with the sticks integrated out instead. So the K = 0 collapses of E and E2 may come partly from this trap, not only from their design flaws as diagnosed in the table above. Candidate C never reached K = 0, so the decision stands.
 
 ## 9. Open questions
 
