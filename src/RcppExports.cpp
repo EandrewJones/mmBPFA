@@ -54,8 +54,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // run_chain
-Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List state0, arma::mat omega0, const Rcpp::List& prior, int warmup, int iter, int thin, double seed, int threads, int moves);
-RcppExport SEXP _mosaicFA_run_chain(SEXP dataSEXP, SEXP x0SEXP, SEXP state0SEXP, SEXP omega0SEXP, SEXP priorSEXP, SEXP warmupSEXP, SEXP iterSEXP, SEXP thinSEXP, SEXP seedSEXP, SEXP threadsSEXP, SEXP movesSEXP) {
+Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List state0, arma::mat omega0, const Rcpp::List& prior, int warmup, int iter, int thin, double seed, int threads, int moves, Rcpp::NumericVector temperatures);
+RcppExport SEXP _mosaicFA_run_chain(SEXP dataSEXP, SEXP x0SEXP, SEXP state0SEXP, SEXP omega0SEXP, SEXP priorSEXP, SEXP warmupSEXP, SEXP iterSEXP, SEXP thinSEXP, SEXP seedSEXP, SEXP threadsSEXP, SEXP movesSEXP, SEXP temperaturesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -70,7 +70,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< int >::type threads(threadsSEXP);
     Rcpp::traits::input_parameter< int >::type moves(movesSEXP);
-    rcpp_result_gen = Rcpp::wrap(run_chain(data, x0, state0, omega0, prior, warmup, iter, thin, seed, threads, moves));
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type temperatures(temperaturesSEXP);
+    rcpp_result_gen = Rcpp::wrap(run_chain(data, x0, state0, omega0, prior, warmup, iter, thin, seed, threads, moves, temperatures));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -243,7 +244,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mosaicFA_rng_draws", (DL_FUNC) &_mosaicFA_rng_draws, 4},
     {"_mosaicFA_rng_stream", (DL_FUNC) &_mosaicFA_rng_stream, 4},
     {"_mosaicFA_log_likelihood_from_x", (DL_FUNC) &_mosaicFA_log_likelihood_from_x, 4},
-    {"_mosaicFA_run_chain", (DL_FUNC) &_mosaicFA_run_chain, 11},
+    {"_mosaicFA_run_chain", (DL_FUNC) &_mosaicFA_run_chain, 12},
     {"_mosaicFA_sample_column_indicators", (DL_FUNC) &_mosaicFA_sample_column_indicators, 6},
     {"_mosaicFA_sample_sticks", (DL_FUNC) &_mosaicFA_sample_sticks, 5},
     {"_mosaicFA_sample_a_cusp", (DL_FUNC) &_mosaicFA_sample_a_cusp, 5},

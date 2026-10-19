@@ -1,10 +1,12 @@
 // One MCMC chain, run entirely in C++.
 #include <RcppArmadillo.h>
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <vector>
 #include "data_structure.h"
 #include "kernels.h"
+#include "rng.h"
 #include "threads.h"
 
 namespace {
@@ -61,6 +63,47 @@ double log_likelihood(const mosaicfa::Data& d, const std::vector<double>& th, co
     return ll;
 }
 
+
+// One replica of a (possibly tempered) chain. Replica r targets
+// pi_b(theta, x) ∝ p(theta) prod N(x_ij; lambda_j' omega_i, 1)^b 1{x in D}. The rank likelihood is
+// scale invariant, so with x~ = sqrt(b) x and lambda~ = sqrt(b) lambda this is the untempered model
+// with the slab rate and spike variance multiplied by b. The replica stores x~, lambda~ and
+// theta~ = b theta and runs the ordinary kernels with its rescaled prior.
+struct Replica {
+    double beta;
+    Rcpp::NumericVector x;
+    Rcpp::List state;
+    arma::mat omega;
+    Rcpp::List prior;
+};
+
+// Rescale a replica's x, lambda and theta by the factor f (lambda, x) and f^2 (theta).
+void rescale(Replica& r, double f) {
+    r.x = r.x * f;
+    r.state["lambda"] = Rcpp::as<arma::mat>(r.state["lambda"]) * f;
+    r.state["theta"] = Rcpp::as<arma::vec>(r.state["theta"]) * (f * f);
+}
+
+// l = -1/2 sum (x - lambda' omega)^2 in the original scale, from the replica's scaled state
+double residual_loglik(const mosaicfa::Data& d, const Replica& r) {
+    const arma::mat lambda = Rcpp::as<arma::mat>(r.state["lambda"]);
+    const arma::mat omega_t = r.omega.t();
+    std::vector<double> ss_col(d.p, 0.0);
+    #pragma omp parallel for schedule(dynamic, 8) num_threads(mosaicfa::num_threads())
+    for (int j = 0; j < d.p; j++) {
+        const arma::rowvec lam_j = lambda.row(j);
+        double ss = 0;
+        for (int c = d.col_ptr[j]; c < d.col_ptr[j + 1]; c++) {
+            const double e = r.x[c] - arma::dot(lam_j, omega_t.col(d.row_idx[c]));
+            ss += e * e;
+        }
+        ss_col[j] = ss;
+    }
+    double ss = 0;
+    for (int j = 0; j < d.p; j++) ss += ss_col[j];     // fixed order: independent of threads
+    return -0.5 * ss / r.beta;
+}
+
 } // namespace
 
 //' Log-likelihood of the observed data given latent x (test entry point)
@@ -88,18 +131,31 @@ double log_likelihood_from_x(const Rcpp::List& data, const Rcpp::NumericVector& 
 //' @param seed chain seed.
 //' @param threads OpenMP threads used inside the chain.
 //' @param moves bit mask of extra scale moves: 1 item scale, 2 column scale.
+//' @param temperatures decreasing inverse temperatures, the first equal to 1; more than one
+//'   runs parallel tempering and keeps draws from the first replica only.
 //'
 //' @return List of kept draws and summaries. \code{threshold_draws} holds, for every kept draw,
 //'   the thresholds of items with at most 10 levels (rows in item order).
 // [[Rcpp::export(name = ".run_chain")]]
 Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List state0,
                      arma::mat omega0, const Rcpp::List& prior,
-                     int warmup, int iter, int thin, double seed, int threads, int moves) {
+                     int warmup, int iter, int thin, double seed, int threads, int moves,
+                     Rcpp::NumericVector temperatures) {
     mosaicfa::num_threads() = threads < 1 ? 1 : threads;
     const mosaicfa::Data d(data);
-    Rcpp::NumericVector x = Rcpp::clone(x0);
-    Rcpp::List state = state0;
-    arma::mat omega = omega0;
+    const int R = temperatures.size();
+    std::vector<Replica> reps(R);
+    for (int r = 0; r < R; r++) {
+        reps[r].beta = temperatures[r];
+        reps[r].x = Rcpp::clone(x0);
+        reps[r].state = Rcpp::clone(state0);
+        reps[r].omega = omega0;
+        reps[r].prior = Rcpp::clone(prior);
+        reps[r].prior["slab_rate"] = Rcpp::as<double>(prior["slab_rate"]) * reps[r].beta;
+        reps[r].prior["spike_var"] = Rcpp::as<double>(prior["spike_var"]) * reps[r].beta;
+        rescale(reps[r], std::sqrt(reps[r].beta));
+    }
+    std::vector<double> swap_tries(std::max(R - 1, 0), 0.0), swap_accepts(std::max(R - 1, 0), 0.0);
     const int n_keep = iter / thin;
 
     Rcpp::List keep_lambda(n_keep), keep_z(n_keep), keep_c(n_keep), keep_omega(n_keep),
@@ -121,24 +177,46 @@ Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List 
     int kept = 0;
     const auto start = std::chrono::steady_clock::now();
     for (int t = 1; t <= warmup + iter; t++) {
-        arma::mat lambda = Rcpp::as<arma::mat>(state["lambda"]);
-        x = sample_x_sparse(data, x, lambda, omega, seed, t);
-        state = sample_loadings(data, x, omega, state, prior, seed, t);
-        lambda = Rcpp::as<arma::mat>(state["lambda"]);
-        omega = sample_omega_sparse(data, x, lambda, seed, t);
-        if (moves) {
-            const arma::imat z = Rcpp::as<arma::imat>(state["z"]);
-            const arma::vec theta = Rcpp::as<arma::vec>(state["theta"]);
-            if (moves & 1) {
-                Rcpp::List mv = item_scale_move(data, x, lambda, z, omega, theta, seed, t);
-                x = mv["x"]; lambda = Rcpp::as<arma::mat>(mv["lambda"]);
+        for (int r = 0; r < R; r++) {
+            // replica 0 uses the chain seed, so an untempered run is unchanged
+            const double seed_r = seed + 7919.0 * r;
+            Replica& rep = reps[r];
+            arma::mat lambda = Rcpp::as<arma::mat>(rep.state["lambda"]);
+            rep.x = sample_x_sparse(data, rep.x, lambda, rep.omega, seed_r, t);
+            rep.state = sample_loadings(data, rep.x, rep.omega, rep.state, rep.prior, seed_r, t);
+            lambda = Rcpp::as<arma::mat>(rep.state["lambda"]);
+            rep.omega = sample_omega_sparse(data, rep.x, lambda, seed_r, t);
+            if (moves) {
+                const arma::imat z = Rcpp::as<arma::imat>(rep.state["z"]);
+                const arma::vec theta = Rcpp::as<arma::vec>(rep.state["theta"]);
+                if (moves & 1) {
+                    Rcpp::List mv = item_scale_move(data, rep.x, lambda, z, rep.omega, theta, seed_r, t);
+                    rep.x = mv["x"]; lambda = Rcpp::as<arma::mat>(mv["lambda"]);
+                }
+                if (moves & 2) {
+                    Rcpp::List mv = column_scale_move(lambda, z, rep.omega, theta, seed_r, t);
+                    lambda = Rcpp::as<arma::mat>(mv["lambda"]); rep.omega = Rcpp::as<arma::mat>(mv["omega"]);
+                }
+                rep.state["lambda"] = lambda;
             }
-            if (moves & 2) {
-                Rcpp::List mv = column_scale_move(lambda, z, omega, theta, seed, t);
-                lambda = Rcpp::as<arma::mat>(mv["lambda"]); omega = Rcpp::as<arma::mat>(mv["omega"]);
-            }
-            state["lambda"] = lambda;
         }
+        // swap adjacent replicas, even pairs on even sweeps and odd pairs on odd sweeps
+        for (int r = t % 2; r + 1 < R; r += 2) {
+            Replica &a = reps[r], &b = reps[r + 1];
+            const double log_acc = (a.beta - b.beta) * (residual_loglik(d, b) - residual_loglik(d, a));
+            mosaicfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(t), mosaicfa::stream_id(mosaicfa::KERNEL_SWAP, r));
+            swap_tries[r]++;
+            if (std::log(rng.unif()) < log_acc) {
+                swap_accepts[r]++;
+                rescale(a, std::sqrt(b.beta / a.beta));      // a's state, moved to b's scale
+                rescale(b, std::sqrt(a.beta / b.beta));
+                std::swap(a.x, b.x); std::swap(a.state, b.state); std::swap(a.omega, b.omega);
+            }
+        }
+        Rcpp::NumericVector x = reps[0].x;
+        Rcpp::List state = reps[0].state;
+        const arma::mat& omega = reps[0].omega;
+        const arma::mat lambda = Rcpp::as<arma::mat>(state["lambda"]);
 
         if (t > warmup && (t - warmup) % thin == 0 && kept < n_keep) {
             const arma::imat z = Rcpp::as<arma::imat>(state["z"]);
@@ -165,6 +243,8 @@ Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List 
     }
     const double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
     for (double& v : th_sum) v /= std::max(kept, 1);
+    Rcpp::NumericVector swap_rate(std::max(R - 1, 0));
+    for (int r = 0; r + 1 < R; r++) swap_rate[r] = swap_tries[r] > 0 ? swap_accepts[r] / swap_tries[r] : NA_REAL;
 
     return Rcpp::List::create(
         Rcpp::Named("lambda") = keep_lambda, Rcpp::Named("z") = keep_z, Rcpp::Named("c") = keep_c,
@@ -172,5 +252,6 @@ Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List 
         Rcpp::Named("theta") = keep_theta, Rcpp::Named("a_cusp") = keep_a,
         Rcpp::Named("K") = keep_K, Rcpp::Named("log_lik") = keep_ll,
         Rcpp::Named("thresholds") = th_sum, Rcpp::Named("threshold_draws") = keep_th,
+        Rcpp::Named("swap_rate") = swap_rate,
         Rcpp::Named("seconds_per_sweep") = seconds / (warmup + iter));
 }

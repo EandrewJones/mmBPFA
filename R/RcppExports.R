@@ -31,11 +31,13 @@
 #' @param seed chain seed.
 #' @param threads OpenMP threads used inside the chain.
 #' @param moves bit mask of extra scale moves: 1 item scale, 2 column scale.
+#' @param temperatures decreasing inverse temperatures, the first equal to 1; more than one
+#'   runs parallel tempering and keeps draws from the first replica only.
 #'
 #' @return List of kept draws and summaries. \code{threshold_draws} holds, for every kept draw,
 #'   the thresholds of items with at most 10 levels (rows in item order).
-.run_chain <- function(data, x0, state0, omega0, prior, warmup, iter, thin, seed, threads, moves) {
-    .Call(`_mosaicFA_run_chain`, data, x0, state0, omega0, prior, warmup, iter, thin, seed, threads, moves)
+.run_chain <- function(data, x0, state0, omega0, prior, warmup, iter, thin, seed, threads, moves, temperatures) {
+    .Call(`_mosaicFA_run_chain`, data, x0, state0, omega0, prior, warmup, iter, thin, seed, threads, moves, temperatures)
 }
 
 #' Sample column indicators of the cumulative shrinkage prior (test entry point)

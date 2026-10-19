@@ -26,12 +26,17 @@
 #' @param moves Extra scale moves that leave the posterior unchanged but can speed up mixing:
 #'   any of \code{"item_scale"} (rescale each item's latent values and loadings)
 #'   and \code{"column_scale"} (trade scale between each column's loadings and scores).
+#' @param temperatures Inverse temperatures for parallel tempering, in (0, 1] and including 1.
+#'   Replica b targets the posterior with noise variance 1 / b; adjacent replicas swap states,
+#'   and draws are kept from the b = 1 replica only. Each replica costs one sweep. The default,
+#'   1, runs the plain sampler.
 #'
 #' @return Object of class \code{mosaicfa.results}: a list with one element per chain,
 #'   each holding the kept draws (\code{lambda}, \code{z}, \code{c}, \code{omega},
 #'   \code{theta}, \code{a_cusp}), the number of counted dimensions \code{K} and the
 #'   log-likelihood \code{log_lik} per draw, posterior-mean level \code{thresholds}, the
 #'   thresholds of items with at most 10 levels for every draw (\code{threshold_draws}),
+#'   the swap acceptance rate between adjacent tempering replicas (\code{swap_rate}),
 #'   and \code{seconds_per_sweep} (sampling time, excluding setup). Attributes record the priors (see \code{\link{get_priors}})
 #'   and the run settings.
 #'
@@ -49,8 +54,14 @@ mosaicFA_sampler <- function(
     threads = 1,
     seed = 101473,
     max_memory_gb = 4,
-    moves = character()
+    moves = character(),
+    temperatures = 1
     ) {
+    if (any(!is.finite(temperatures)) || any(temperatures <= 0 | temperatures > 1)) {
+        stop("temperatures must lie in (0, 1]")
+    }
+    if (!any(temperatures == 1)) stop("temperatures must include 1 (the replica whose draws are kept)")
+    temperatures <- sort(unique(temperatures), decreasing = TRUE)
     if (length(moves)) moves <- match.arg(moves, c("item_scale", "column_scale"), several.ok = TRUE)
     if (warmup < 0 || iter < 1 || thin < 1 || chains < 1) {
         stop("warmup must be >= 0, and iter, thin and chains must be positive")
@@ -72,7 +83,7 @@ mosaicFA_sampler <- function(
                             "increase `thin`, reduce `iter`, or raise `max_memory_gb`."), gb, max_memory_gb))
     }
 
-    run <- function(chain) run_one_chain(data, prior, K_start, warmup, iter, thin, seed + chain - 1, threads, moves)
+    run <- function(chain) run_one_chain(data, prior, K_start, warmup, iter, thin, seed + chain - 1, threads, moves, temperatures)
     chain_out <- if (chains == 1 || n_cores == 1) {
         lapply(seq_len(chains), run)
     } else if (.Platform$OS.type == "windows") {
@@ -87,7 +98,7 @@ mosaicFA_sampler <- function(
         priors = prior,
         n = data$n, p = data$p, levels = level_values(data),
         warmup = warmup, iter = iter, thin = thin, chains = chains,
-        K_start = K_start, seed = seed, moves = moves
+        K_start = K_start, seed = seed, moves = moves, temperatures = temperatures
     )
 }
 
@@ -95,7 +106,8 @@ mosaicFA_sampler <- function(
 #' Run one chain from a seeded starting point
 #'
 #' @keywords internal
-run_one_chain <- function(data, prior, K_start, warmup, iter, thin, seed, threads = 1, moves = character()) {
+run_one_chain <- function(data, prior, K_start, warmup, iter, thin, seed, threads = 1, moves = character(),
+                          temperatures = 1) {
     set.seed(seed)
     H <- prior$H; p <- data$p; n <- data$n
     on <- seq_len(H) <= K_start
@@ -112,7 +124,7 @@ run_one_chain <- function(data, prior, K_start, warmup, iter, thin, seed, thread
     )
     omega <- matrix(rnorm(n * H), n, H)
     .run_chain(data, initial_x(data), state, omega, prior, warmup, iter, thin, seed, threads,
-               sum(c(item_scale = 1L, column_scale = 2L)[moves]))
+               sum(c(item_scale = 1L, column_scale = 2L)[moves]), temperatures)
 }
 
 
