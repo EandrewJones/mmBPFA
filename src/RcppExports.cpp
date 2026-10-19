@@ -52,6 +52,38 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// sample_alpha_sparse
+arma::vec sample_alpha_sparse(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& lambda, const arma::mat& omega, double seed, double iter);
+RcppExport SEXP _mmBPFA_sample_alpha_sparse(SEXP dataSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP omegaSEXP, SEXP seedSEXP, SEXP iterSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type omega(omegaSEXP);
+    Rcpp::traits::input_parameter< double >::type seed(seedSEXP);
+    Rcpp::traits::input_parameter< double >::type iter(iterSEXP);
+    rcpp_result_gen = Rcpp::wrap(sample_alpha_sparse(data, x, lambda, omega, seed, iter));
+    return rcpp_result_gen;
+END_RCPP
+}
+// sample_omega_sparse
+arma::mat sample_omega_sparse(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& lambda, const arma::vec& alpha, double seed, double iter);
+RcppExport SEXP _mmBPFA_sample_omega_sparse(SEXP dataSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP alphaSEXP, SEXP seedSEXP, SEXP iterSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< double >::type seed(seedSEXP);
+    Rcpp::traits::input_parameter< double >::type iter(iterSEXP);
+    rcpp_result_gen = Rcpp::wrap(sample_omega_sparse(data, x, lambda, alpha, seed, iter));
+    return rcpp_result_gen;
+END_RCPP
+}
 // sample_gamma_k
 arma::vec sample_gamma_k(const arma::mat& zeros, const arma::mat& lambda, const double c, const double d);
 RcppExport SEXP _mmBPFA_sample_gamma_k(SEXP zerosSEXP, SEXP lambdaSEXP, SEXP cSEXP, SEXP dSEXP) {
@@ -177,6 +209,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mmBPFA_rng_draws", (DL_FUNC) &_mmBPFA_rng_draws, 4},
     {"_mmBPFA_rng_stream", (DL_FUNC) &_mmBPFA_rng_stream, 4},
     {"_mmBPFA_sample_alpha", (DL_FUNC) &_mmBPFA_sample_alpha, 3},
+    {"_mmBPFA_sample_alpha_sparse", (DL_FUNC) &_mmBPFA_sample_alpha_sparse, 6},
+    {"_mmBPFA_sample_omega_sparse", (DL_FUNC) &_mmBPFA_sample_omega_sparse, 6},
     {"_mmBPFA_sample_gamma_k", (DL_FUNC) &_mmBPFA_sample_gamma_k, 4},
     {"_mmBPFA_sample_d", (DL_FUNC) &_mmBPFA_sample_d, 5},
     {"_mmBPFA_sample_IBP_a", (DL_FUNC) &_mmBPFA_sample_IBP_a, 4},

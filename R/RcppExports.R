@@ -23,6 +23,43 @@ sample_alpha <- function(x, lambda, omega) {
     .Call(`_mmBPFA_sample_alpha`, x, lambda, omega)
 }
 
+#' Sample item intercepts from observed cells
+#'
+#' alpha_j ~ N(mean over observed i of (lambda_j' omega_i - x_ij), 1 / n_j) under
+#' a flat prior. Items with no observations get alpha_j = 0.
+#'
+#' @keywords internal
+#'
+#' @param data output of \code{prepare_data}.
+#' @param x latent values, one per observed cell.
+#' @param lambda P x K loadings.
+#' @param omega N x K factor scores.
+#' @param seed,iter seed and iteration; item j uses its own alpha-kernel stream.
+#'
+#' @return Numeric vector of length P.
+.sample_alpha_sparse <- function(data, x, lambda, omega, seed, iter) {
+    .Call(`_mmBPFA_sample_alpha_sparse`, data, x, lambda, omega, seed, iter)
+}
+
+#' Sample factor scores from observed cells
+#'
+#' omega_i ~ N(S_i sum_{j in obs(i)} lambda_j (x_ij + alpha_j), S_i) with
+#' S_i = (sum_{j in obs(i)} lambda_j lambda_j' + I)^-1, drawn through the
+#' Cholesky factor of S_i^-1. Rows with no observations draw from N(0, I).
+#'
+#' @keywords internal
+#'
+#' @param data output of \code{prepare_data}.
+#' @param x latent values, one per observed cell.
+#' @param lambda P x K loadings.
+#' @param alpha item intercepts, length P.
+#' @param seed,iter seed and iteration; row i uses its own omega-kernel stream.
+#'
+#' @return N x K matrix.
+.sample_omega_sparse <- function(data, x, lambda, alpha, seed, iter) {
+    .Call(`_mmBPFA_sample_omega_sparse`, data, x, lambda, alpha, seed, iter)
+}
+
 #' Sampling step for gamma_k (factor precisions)
 #'
 #' @keywords internal
