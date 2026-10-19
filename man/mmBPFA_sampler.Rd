@@ -47,7 +47,7 @@ format with columns \code{row}, \code{col}, \code{value} (see \code{\link{prepar
 \item{max_memory_gb}{Stop before sampling if the kept draws would need more memory than this.}
 
 \item{moves}{Extra scale moves that leave the posterior unchanged but can speed up mixing:
-any of \code{"item_scale"} (rescale each item's latent values, loadings and intercept)
+any of \code{"item_scale"} (rescale each item's latent values and loadings)
 and \code{"column_scale"} (trade scale between each column's loadings and scores).}
 }
 \value{

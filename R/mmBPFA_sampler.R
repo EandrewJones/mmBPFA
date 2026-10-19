@@ -24,7 +24,7 @@
 #' @param seed Random seed; chain c uses \code{seed + c - 1}.
 #' @param max_memory_gb Stop before sampling if the kept draws would need more memory than this.
 #' @param moves Extra scale moves that leave the posterior unchanged but can speed up mixing:
-#'   any of \code{"item_scale"} (rescale each item's latent values, loadings and intercept)
+#'   any of \code{"item_scale"} (rescale each item's latent values and loadings)
 #'   and \code{"column_scale"} (trade scale between each column's loadings and scores).
 #'
 #' @return Object of class \code{bpfa.results}: a list with one element per chain,
