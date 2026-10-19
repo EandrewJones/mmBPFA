@@ -357,3 +357,24 @@ Cost is linear in the number of observed cells from about 200k cells upward. Bel
 - Murray, Dunson, Carin & Lucas (2013), Bayesian Gaussian copula factor models for mixed data, JASA.
 - Ohn (2022), arXiv:2206.08002. Ohn, Lin & Kim (2023), arXiv:2305.18488.
 - Schiavon, Canale & Dunson (2022), Generalized infinite factorization models, Biometrika; arXiv:2103.10333.
+
+## 9. Mixing experiment 1: scale moves (opt-in `moves`)
+
+Two exact generalized-Gibbs moves (Liu & Sabatti 2000): item scale (Liu–Wu PX-DA per item) and column scale (λ_k ↔ ω_k). The first version counted α_j in the item move's Jacobian. α_j is not identified under the rank likelihood, and its flat prior makes that direction improper. Counting it added one power of s per item per sweep, the scales drifted upward, and K rose to about 25 (the chain diverged on sparse data). The corrected move uses shape (n_j + m_j)/2, and a sparse-data invariance test now guards it.
+
+Replicated long traces: 400 × 60, 22,000 iterations, starts 2 and 30, 4 seeds. Columns:
+- **gap**: mean |difference in K| between the two starts' block medians, per 4,000-iteration block;
+- **R-hat**: R-hat for K over all 8 chains in the second half.
+
+| DGP | none | item | column | both |
+|---|---|---|---|---|
+| binary_ctr2, gap | 13.3 5.9 2.8 2.4 2.2 3 | 10.2 3.2 2 2.2 2.5 2.8 | 11.8 6.5 5.8 4.1 3.4 1.8 | 8.6 3.8 2.1 2.9 2.4 2 |
+| binary_ctr2, R-hat | 1.83 | 1.60 | 1.91 | 1.47 |
+| mcar90, gap | 6.4 2.1 1.9 1.5 1.1 1.2 | 4.7 2 1.6 1.2 1.1 1.2 | 6.4 3.4 3.1 1.2 1.2 1.2 | 5.4 1.6 1.2 2.1 1.4 1.5 |
+| mcar90, R-hat | 1.15 | 1.29 | 1.16 | 1.30 |
+
+- **mix_omega and duplicate_pair:** the moves make no difference.
+- **C error:** unchanged.
+- **Cost:** 5–8% more per sweep.
+
+**Verdict.** The moves speed up the first few thousand iterations but leave late mixing unchanged, so the bottleneck is not scale. They stay opt-in and off by default. The remaining stickiness is the data-augmentation coupling: x adapts to the current columns (Johndrow et al. 2019).
