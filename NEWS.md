@@ -6,6 +6,7 @@
 * `mmBPFA_sampler()` takes `priors`, `H`, `K_start`, `warmup`, `iter`, `thin`, `chains`, `n_cores`, `threads`, `seed` and `max_memory_gb`. The `mode`, `pre_sparse`, `share_noise`, `parallel` and `benchmark` arguments are gone: margins are handled per item automatically.
 * `process_results()` output: "Slab Variances" replaces "Factor Precisions". New fields are "K Distribution", "R-hat K", "Copula Loadings", "Uncounted Correlation Share" and "Priors".
 * `process_benchmarks()` and `calculate_d_mask()` are removed.
+* Item intercepts are removed from the model. They are not identified under the rank likelihood, and their flat prior made their posterior improper, so the reported intercepts and cutpoints drifted between chains. Item difficulty is now reported as "Item Thresholds": one per pair of adjacent observed values, with credible intervals for items with at most 10 levels. "Item-level Intercepts" and the stored `alpha` draws are gone.
 
 ## New features
 
@@ -13,6 +14,7 @@
 * Long-format input (`row`, `col`, `value`) so sparse data never build the N x P matrix.
 * The whole chain runs in C++ on observed cells only, with OpenMP threads (`threads`). Results are bit-identical for any thread count.
 * R-hat for the number of dimensions across chains, with a warning when chains disagree.
+* Optional scale moves (`moves = c("item_scale", "column_scale")`). They leave the posterior unchanged and speed up early mixing slightly.
 
 ## Bug fixes
 

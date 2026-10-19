@@ -14,7 +14,7 @@ namespace mmbpfa {
 
 // Stream ids carry the kernel in their high bits, so two kernels drawing for the
 // same column or row in the same iteration never share random numbers.
-enum Kernel : uint64_t { KERNEL_X = 0, KERNEL_ALPHA = 1, KERNEL_OMEGA = 2, KERNEL_LOADINGS = 3, KERNEL_COLUMNS = 4, KERNEL_MOVES = 5 };
+enum Kernel : uint64_t { KERNEL_X = 0, KERNEL_OMEGA = 2, KERNEL_LOADINGS = 3, KERNEL_COLUMNS = 4, KERNEL_MOVES = 5 };
 inline uint64_t stream_id(Kernel kernel, uint64_t unit) { return (static_cast<uint64_t>(kernel) << 48) ^ unit; }
 
 inline uint64_t splitmix64(uint64_t x) {

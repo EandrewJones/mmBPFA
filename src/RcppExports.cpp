@@ -40,8 +40,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // log_likelihood_from_x
-double log_likelihood_from_x(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& lambda, const arma::mat& omega, const arma::vec& alpha);
-RcppExport SEXP _mmBPFA_log_likelihood_from_x(SEXP dataSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP omegaSEXP, SEXP alphaSEXP) {
+double log_likelihood_from_x(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& lambda, const arma::mat& omega);
+RcppExport SEXP _mmBPFA_log_likelihood_from_x(SEXP dataSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP omegaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -49,14 +49,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type x(xSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type lambda(lambdaSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type omega(omegaSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type alpha(alphaSEXP);
-    rcpp_result_gen = Rcpp::wrap(log_likelihood_from_x(data, x, lambda, omega, alpha));
+    rcpp_result_gen = Rcpp::wrap(log_likelihood_from_x(data, x, lambda, omega));
     return rcpp_result_gen;
 END_RCPP
 }
 // run_chain
-Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List state0, arma::mat omega0, arma::vec alpha0, const Rcpp::List& prior, int warmup, int iter, int thin, double seed, int threads, int moves);
-RcppExport SEXP _mmBPFA_run_chain(SEXP dataSEXP, SEXP x0SEXP, SEXP state0SEXP, SEXP omega0SEXP, SEXP alpha0SEXP, SEXP priorSEXP, SEXP warmupSEXP, SEXP iterSEXP, SEXP thinSEXP, SEXP seedSEXP, SEXP threadsSEXP, SEXP movesSEXP) {
+Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List state0, arma::mat omega0, const Rcpp::List& prior, int warmup, int iter, int thin, double seed, int threads, int moves);
+RcppExport SEXP _mmBPFA_run_chain(SEXP dataSEXP, SEXP x0SEXP, SEXP state0SEXP, SEXP omega0SEXP, SEXP priorSEXP, SEXP warmupSEXP, SEXP iterSEXP, SEXP thinSEXP, SEXP seedSEXP, SEXP threadsSEXP, SEXP movesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -64,7 +63,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type x0(x0SEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type state0(state0SEXP);
     Rcpp::traits::input_parameter< arma::mat >::type omega0(omega0SEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type alpha0(alpha0SEXP);
     Rcpp::traits::input_parameter< const Rcpp::List& >::type prior(priorSEXP);
     Rcpp::traits::input_parameter< int >::type warmup(warmupSEXP);
     Rcpp::traits::input_parameter< int >::type iter(iterSEXP);
@@ -72,39 +70,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< int >::type threads(threadsSEXP);
     Rcpp::traits::input_parameter< int >::type moves(movesSEXP);
-    rcpp_result_gen = Rcpp::wrap(run_chain(data, x0, state0, omega0, alpha0, prior, warmup, iter, thin, seed, threads, moves));
-    return rcpp_result_gen;
-END_RCPP
-}
-// sample_alpha_sparse
-arma::vec sample_alpha_sparse(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& lambda, const arma::mat& omega, double seed, double iter);
-RcppExport SEXP _mmBPFA_sample_alpha_sparse(SEXP dataSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP omegaSEXP, SEXP seedSEXP, SEXP iterSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type x(xSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type lambda(lambdaSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type omega(omegaSEXP);
-    Rcpp::traits::input_parameter< double >::type seed(seedSEXP);
-    Rcpp::traits::input_parameter< double >::type iter(iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(sample_alpha_sparse(data, x, lambda, omega, seed, iter));
-    return rcpp_result_gen;
-END_RCPP
-}
-// sample_omega_sparse
-arma::mat sample_omega_sparse(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& lambda, const arma::vec& alpha, double seed, double iter);
-RcppExport SEXP _mmBPFA_sample_omega_sparse(SEXP dataSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP alphaSEXP, SEXP seedSEXP, SEXP iterSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type x(xSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type lambda(lambdaSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type alpha(alphaSEXP);
-    Rcpp::traits::input_parameter< double >::type seed(seedSEXP);
-    Rcpp::traits::input_parameter< double >::type iter(iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(sample_omega_sparse(data, x, lambda, alpha, seed, iter));
+    rcpp_result_gen = Rcpp::wrap(run_chain(data, x0, state0, omega0, prior, warmup, iter, thin, seed, threads, moves));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -171,26 +137,25 @@ BEGIN_RCPP
 END_RCPP
 }
 // sample_loadings
-Rcpp::List sample_loadings(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& omega, const arma::vec& alpha, const Rcpp::List& state, const Rcpp::List& prior, double seed, double iter);
-RcppExport SEXP _mmBPFA_sample_loadings(SEXP dataSEXP, SEXP xSEXP, SEXP omegaSEXP, SEXP alphaSEXP, SEXP stateSEXP, SEXP priorSEXP, SEXP seedSEXP, SEXP iterSEXP) {
+Rcpp::List sample_loadings(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& omega, const Rcpp::List& state, const Rcpp::List& prior, double seed, double iter);
+RcppExport SEXP _mmBPFA_sample_loadings(SEXP dataSEXP, SEXP xSEXP, SEXP omegaSEXP, SEXP stateSEXP, SEXP priorSEXP, SEXP seedSEXP, SEXP iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::List& >::type data(dataSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type x(xSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type omega(omegaSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< const Rcpp::List& >::type state(stateSEXP);
     Rcpp::traits::input_parameter< const Rcpp::List& >::type prior(priorSEXP);
     Rcpp::traits::input_parameter< double >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< double >::type iter(iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(sample_loadings(data, x, omega, alpha, state, prior, seed, iter));
+    rcpp_result_gen = Rcpp::wrap(sample_loadings(data, x, omega, state, prior, seed, iter));
     return rcpp_result_gen;
 END_RCPP
 }
 // item_scale_move
-Rcpp::List item_scale_move(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& lambda, const arma::imat& z, const arma::mat& omega, const arma::vec& alpha, const arma::vec& theta, double seed, double iter);
-RcppExport SEXP _mmBPFA_item_scale_move(SEXP dataSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP zSEXP, SEXP omegaSEXP, SEXP alphaSEXP, SEXP thetaSEXP, SEXP seedSEXP, SEXP iterSEXP) {
+Rcpp::List item_scale_move(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& lambda, const arma::imat& z, const arma::mat& omega, const arma::vec& theta, double seed, double iter);
+RcppExport SEXP _mmBPFA_item_scale_move(SEXP dataSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP zSEXP, SEXP omegaSEXP, SEXP thetaSEXP, SEXP seedSEXP, SEXP iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -199,11 +164,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::mat& >::type lambda(lambdaSEXP);
     Rcpp::traits::input_parameter< const arma::imat& >::type z(zSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type omega(omegaSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type theta(thetaSEXP);
     Rcpp::traits::input_parameter< double >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< double >::type iter(iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(item_scale_move(data, x, lambda, z, omega, alpha, theta, seed, iter));
+    rcpp_result_gen = Rcpp::wrap(item_scale_move(data, x, lambda, z, omega, theta, seed, iter));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -223,9 +187,24 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// sample_omega_sparse
+arma::mat sample_omega_sparse(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& lambda, double seed, double iter);
+RcppExport SEXP _mmBPFA_sample_omega_sparse(SEXP dataSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP seedSEXP, SEXP iterSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< double >::type seed(seedSEXP);
+    Rcpp::traits::input_parameter< double >::type iter(iterSEXP);
+    rcpp_result_gen = Rcpp::wrap(sample_omega_sparse(data, x, lambda, seed, iter));
+    return rcpp_result_gen;
+END_RCPP
+}
 // sample_x_sparse
-Rcpp::NumericVector sample_x_sparse(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& lambda, const arma::mat& omega, const arma::vec& alpha, double seed, double iter);
-RcppExport SEXP _mmBPFA_sample_x_sparse(SEXP dataSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP omegaSEXP, SEXP alphaSEXP, SEXP seedSEXP, SEXP iterSEXP) {
+Rcpp::NumericVector sample_x_sparse(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& lambda, const arma::mat& omega, double seed, double iter);
+RcppExport SEXP _mmBPFA_sample_x_sparse(SEXP dataSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP omegaSEXP, SEXP seedSEXP, SEXP iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -233,10 +212,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type x(xSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type lambda(lambdaSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type omega(omegaSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< double >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< double >::type iter(iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(sample_x_sparse(data, x, lambda, omega, alpha, seed, iter));
+    rcpp_result_gen = Rcpp::wrap(sample_x_sparse(data, x, lambda, omega, seed, iter));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -264,18 +242,17 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_mmBPFA_rng_draws", (DL_FUNC) &_mmBPFA_rng_draws, 4},
     {"_mmBPFA_rng_stream", (DL_FUNC) &_mmBPFA_rng_stream, 4},
-    {"_mmBPFA_log_likelihood_from_x", (DL_FUNC) &_mmBPFA_log_likelihood_from_x, 5},
-    {"_mmBPFA_run_chain", (DL_FUNC) &_mmBPFA_run_chain, 12},
-    {"_mmBPFA_sample_alpha_sparse", (DL_FUNC) &_mmBPFA_sample_alpha_sparse, 6},
-    {"_mmBPFA_sample_omega_sparse", (DL_FUNC) &_mmBPFA_sample_omega_sparse, 6},
+    {"_mmBPFA_log_likelihood_from_x", (DL_FUNC) &_mmBPFA_log_likelihood_from_x, 4},
+    {"_mmBPFA_run_chain", (DL_FUNC) &_mmBPFA_run_chain, 11},
     {"_mmBPFA_sample_column_indicators", (DL_FUNC) &_mmBPFA_sample_column_indicators, 6},
     {"_mmBPFA_sample_sticks", (DL_FUNC) &_mmBPFA_sample_sticks, 5},
     {"_mmBPFA_sample_a_cusp", (DL_FUNC) &_mmBPFA_sample_a_cusp, 5},
     {"_mmBPFA_sample_theta", (DL_FUNC) &_mmBPFA_sample_theta, 6},
-    {"_mmBPFA_sample_loadings", (DL_FUNC) &_mmBPFA_sample_loadings, 8},
-    {"_mmBPFA_item_scale_move", (DL_FUNC) &_mmBPFA_item_scale_move, 9},
+    {"_mmBPFA_sample_loadings", (DL_FUNC) &_mmBPFA_sample_loadings, 7},
+    {"_mmBPFA_item_scale_move", (DL_FUNC) &_mmBPFA_item_scale_move, 8},
     {"_mmBPFA_column_scale_move", (DL_FUNC) &_mmBPFA_column_scale_move, 6},
-    {"_mmBPFA_sample_x_sparse", (DL_FUNC) &_mmBPFA_sample_x_sparse, 7},
+    {"_mmBPFA_sample_omega_sparse", (DL_FUNC) &_mmBPFA_sample_omega_sparse, 5},
+    {"_mmBPFA_sample_x_sparse", (DL_FUNC) &_mmBPFA_sample_x_sparse, 6},
     {"_mmBPFA_openmp_available", (DL_FUNC) &_mmBPFA_openmp_available, 0},
     {"_mmBPFA_set_threads", (DL_FUNC) &_mmBPFA_set_threads, 1},
     {NULL, NULL, 0}

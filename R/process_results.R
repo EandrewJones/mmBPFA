@@ -19,8 +19,8 @@
 #' @return Object of class \code{mcmc.output.processed} with the stable
 #'   dimensions, the K distribution (and R-hat for K with several chains), loadings
 #'   on the sampler and copula scales, factor scores, slab variances, item
-#'   intercepts, log-likelihoods, level cutpoints, the uncounted correlation share
-#'   and the priors.
+#'   thresholds (item difficulties), log-likelihoods, level cutpoints, the uncounted
+#'   correlation share and the priors.
 #'
 #' @export
 process_results <- function(mcmc_object, SE = TRUE, p = c(0.05, 0.95), to_tibble = TRUE) {
@@ -31,7 +31,7 @@ process_results <- function(mcmc_object, SE = TRUE, p = c(0.05, 0.95), to_tibble
     # pool draws across chains
     pool <- function(field) unlist(lapply(mcmc_object, `[[`, field), recursive = FALSE)
     lambda <- pool("lambda"); z <- pool("z"); cc <- pool("c"); omega <- pool("omega")
-    alpha <- pool("alpha"); theta <- pool("theta")
+    theta <- pool("theta")
     chain_of <- rep(seq_len(n_chains), sapply(mcmc_object, function(ch) length(ch$K)))
 
     # counted dimensions of each draw: on (c_h > h) with at least three items
@@ -62,8 +62,8 @@ process_results <- function(mcmc_object, SE = TRUE, p = c(0.05, 0.95), to_tibble
     theta_al <- lapply(seq_along(theta), function(t) theta[[t]][counted[[t]]][perms[[t]]])
 
     stable_K <- find_stable_dims(perms)
-    zero_csums <- t(sapply(z_al, function(m) colSums(m[, stable_K, drop = FALSE])))
-    if (length(stable_K) == 1) zero_csums <- matrix(zero_csums, ncol = 1)
+    zero_csums <- matrix(unlist(lapply(z_al, function(m) colSums(m[, stable_K, drop = FALSE]))),
+                         ncol = length(stable_K), byrow = TRUE)
     dim_order <- order(colMeans(zero_csums, na.rm = TRUE), decreasing = TRUE)
 
     out_msg <- paste("The sampler found", median_K, "dimensions (median);", length(stable_K),
@@ -78,13 +78,6 @@ process_results <- function(mcmc_object, SE = TRUE, p = c(0.05, 0.95), to_tibble
     }
 
     summarise <- function(draws) extract_omega_lambda_mean_se(draws, dim_order, stable_K, p, se = SE)
-    alpha_mat <- do.call(cbind, alpha)
-    alpha_out <- tibble::tibble(item = seq_len(nrow(alpha_mat)), alpha = rowMeans(alpha_mat))
-    if (SE) {
-        q <- t(apply(alpha_mat, 1, stats::quantile, p = p))
-        alpha_out[[paste0("ci_", p[1])]] <- q[, 1]
-        alpha_out[[paste0("ci_", p[2])]] <- q[, 2]
-    }
     theta_mat <- do.call(cbind, lapply(theta_al, function(th) th[stable_K][dim_order]))
     theta_out <- tibble::tibble(dimension = seq_along(stable_K),
                                 theta = rowMeans(matrix(theta_mat, nrow = length(stable_K)), na.rm = TRUE))
@@ -101,7 +94,7 @@ process_results <- function(mcmc_object, SE = TRUE, p = c(0.05, 0.95), to_tibble
     output_list[["Copula Loadings"]] <- summarise(copula_al)
     output_list[["Factor Scores"]] <- summarise(omega_al)
     output_list[["Slab Variances"]] <- theta_out
-    output_list[["Item-level Intercepts"]] <- alpha_out
+    output_list[["Item Thresholds"]] <- item_thresholds(mcmc_object, if (SE) p)
     output_list[["log-Likelihoods"]] <- log_liks_out
     output_list[["Cutpoints"]] <- pooled_cutpoints(mcmc_object)
     output_list[["Uncounted Correlation Share"]] <- uncounted_share(lambda, counted)
@@ -162,6 +155,43 @@ pooled_cutpoints <- function(mcmc_object) {
 }
 
 
+#' Item thresholds: the identified item difficulties
+#'
+#' The model has no item intercepts: under the rank likelihood they are not
+#' identified. An item's difficulty is the threshold between each pair of adjacent
+#' observed values, on the latent scale fixed by the factor model. Credible
+#' intervals are given for items with at most 10 levels, whose thresholds are kept
+#' for every draw; other items get the posterior mean only.
+#'
+#' @keywords internal
+#'
+#' @param mcmc_object output of \code{mmBPFA_sampler}.
+#' @param p lower and upper probabilities of the credible intervals, or NULL for none.
+#'
+#' @return tibble with one row per threshold: item, the values on either side, mean
+#'   and, if requested, credible interval.
+item_thresholds <- function(mcmc_object, p = NULL) {
+    levels <- attr(mcmc_object, "levels")
+    n_th <- pmax(lengths(levels) - 1L, 0L)
+    item <- rep(seq_along(n_th), n_th)
+    out <- tibble::tibble(
+        item = item,
+        lower_value = unlist(lapply(levels, function(v) utils::head(sort(v), -1))),
+        upper_value = unlist(lapply(levels, function(v) sort(v)[-1])),
+        mean = Reduce(`+`, lapply(mcmc_object, `[[`, "thresholds")) / length(mcmc_object)
+    )
+    if (!is.null(p)) {
+        stored <- lengths(levels)[item] <= 10
+        draws <- do.call(cbind, lapply(mcmc_object, `[[`, "threshold_draws"))
+        q <- matrix(NA_real_, nrow(out), 2)
+        if (any(stored) && ncol(draws) > 0) q[stored, ] <- t(apply(draws, 1, stats::quantile, p = p))
+        out[[paste0("ci_", p[1])]] <- q[, 1]
+        out[[paste0("ci_", p[2])]] <- q[, 2]
+    }
+    out
+}
+
+
 #' Share of the copula correlation carried by uncounted columns
 #'
 #' Mean absolute difference between the copula correlation of all columns and
@@ -209,7 +239,7 @@ check_logliks <- function(results, probs = c(0.05, 0.1, 0.2, 0.5, 0.8, 0.9, 0.95
 #' Function to check reconstruction accuracy
 #'
 #' \code{check_accuracy} predicts each observed cell from the posterior-mean
-#' loadings, scores, intercepts and level cutpoints, and reports exact-match
+#' loadings, scores and level cutpoints, and reports exact-match
 #' accuracy, RMSE, MAE and the geometric mean probability of the observed data.
 #' If \code{true_vals} from \code{generate_sim_data} is supplied, it also reports
 #' RMSE and MAE of the latent quantities. A confusion matrix, precision, recall
@@ -232,8 +262,7 @@ check_accuracy <- function(dat, results, true_vals = NULL, confusion = TRUE, ret
     stable_K <- results[["Stable Dimensions"]]
     lambda <- as.matrix(results[["Factor Loadings"]][, -1])
     omega <- as.matrix(results[["Factor Scores"]][, -1])
-    alpha <- results[["Item-level Intercepts"]][[2]]
-    x <- omega %*% t(lambda) - matrix(alpha, nrow(omega), length(alpha), byrow = TRUE)
+    x <- omega %*% t(lambda)
 
     cutpoints <- results[["Cutpoints"]]
     levels <- lapply(seq_len(ncol(dat)), function(j) sort(unique(dat[!is.na(dat[, j]), j])))
@@ -253,10 +282,13 @@ check_accuracy <- function(dat, results, true_vals = NULL, confusion = TRUE, ret
         c(true_x, true_lambda, true_zeros, true_omega, true_alpha, true_pi_k, true_gamma_k) %<-% true_vals
         K <- min(ncol(true_lambda), length(stable_K))
         theta <- results[["Slab Variances"]][[2]][1:K]
+        # the latent location of each item is not identified (item intercepts are absorbed
+        # by the thresholds), so latent values are compared after centring each item
+        centre <- function(m) sweep(m, 2, colMeans(m))
         rmse_mae_results <- tibble::tibble(
-            "parameters" = c("x", "lambda", "omega", "alpha", "gamma_k"),
-            "actual" = list(true_x, true_lambda[, 1:K], true_omega[, 1:K], true_alpha, true_gamma_k[1:K]),
-            "predicted" = list(x, lambda[, 1:K], omega[, 1:K], alpha, 1 / theta)
+            "parameters" = c("x", "lambda", "omega", "gamma_k"),
+            "actual" = list(centre(true_x), true_lambda[, 1:K], true_omega[, 1:K], true_gamma_k[1:K]),
+            "predicted" = list(centre(x), lambda[, 1:K], omega[, 1:K], 1 / theta)
         )
         rmse_mae_results <- rmse_mae_results %>%
             dplyr::mutate(results = purrr::map2(.data$actual, .data$predicted, ~ rmse_mae(.x, .y))) %>%
@@ -290,18 +322,18 @@ check_accuracy <- function(dat, results, true_vals = NULL, confusion = TRUE, ret
 #'
 #' @keywords internal
 extract_omega_lambda_mean_se <- function(x, dim_order, stable_K, p, se = TRUE, to_tibble = TRUE) {
-    x_array <- abind::abind(purrr::map(x, ~ .x[, stable_K, drop = FALSE]), along = 3)
-    x_array <- x_array[, dim_order, , drop = FALSE]
-    x_mean <- apply(x_array, 1:2, mean, na.rm = TRUE)
-    if (!is.matrix(x_mean)) x_mean <- matrix(x_mean, ncol = length(stable_K))
+    x_array <- array(unlist(purrr::map(x, ~ .x[, stable_K, drop = FALSE][, dim_order, drop = FALSE])),
+                     dim = c(nrow(x[[1]]), length(stable_K), length(x)))
+    x_mean <- matrix(if (length(stable_K)) apply(x_array, 1:2, mean, na.rm = TRUE) else numeric(0),
+                     nrow = nrow(x[[1]]), ncol = length(stable_K))
     if (!se) {
         x_out <- tibble::as_tibble(x_mean, .name_repair = "minimal")
         names(x_out) <- paste0("dim_", seq_along(stable_K))
         x_out <- tibble::add_column(x_out, row = seq_len(nrow(x_mean)), .before = 1)
         return(x_out)
     }
-    lo <- apply(x_array, 1:2, stats::quantile, p = p[1], na.rm = TRUE)
-    hi <- apply(x_array, 1:2, stats::quantile, p = p[2], na.rm = TRUE)
+    quant <- function(q) if (length(stable_K)) apply(x_array, 1:2, stats::quantile, p = q, na.rm = TRUE) else numeric(0)
+    lo <- quant(p[1]); hi <- quant(p[2])
     x_out <- tibble::tibble(
         row = rep(seq_len(nrow(x_mean)), length(stable_K)),
         dimension = rep(seq_along(stable_K), each = nrow(x_mean)),

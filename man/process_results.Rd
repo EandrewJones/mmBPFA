@@ -19,8 +19,8 @@ process_results(mcmc_object, SE = TRUE, p = c(0.05, 0.95), to_tibble = TRUE)
 Object of class \code{mcmc.output.processed} with the stable
 dimensions, the K distribution (and R-hat for K with several chains), loadings
 on the sampler and copula scales, factor scores, slab variances, item
-intercepts, log-likelihoods, level cutpoints, the uncounted correlation share
-and the priors.
+thresholds (item difficulties), log-likelihoods, level cutpoints, the uncounted
+correlation share and the priors.
 }
 \description{
 \code{process_results} pools the kept draws of all chains and returns

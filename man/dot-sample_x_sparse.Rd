@@ -4,7 +4,7 @@
 \alias{.sample_x_sparse}
 \title{Sample latent x for every observed cell}
 \usage{
-.sample_x_sparse(data, x, lambda, omega, alpha, seed, iter)
+.sample_x_sparse(data, x, lambda, omega, seed, iter)
 }
 \arguments{
 \item{data}{output of \code{prepare_data}.}
@@ -14,8 +14,6 @@
 \item{lambda}{P x K loadings (zero where inactive).}
 
 \item{omega}{N x K factor scores.}
-
-\item{alpha}{item intercepts, length P.}
 
 \item{seed, iter}{seed and iteration; column j uses its own x-kernel stream.}
 }

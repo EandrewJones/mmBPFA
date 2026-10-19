@@ -1,4 +1,4 @@
-// Item intercepts and factor scores, conditioning on observed cells only.
+// Factor scores, conditioning on observed cells only.
 #include <RcppArmadillo.h>
 #include "data_structure.h"
 #include "rng.h"
@@ -59,49 +59,9 @@ void accumulate_outer(arma::mat& prec, const arma::mat& lambda_t, int j, double 
 } // namespace
 
 
-//' Sample item intercepts from observed cells
-//'
-//' alpha_j ~ N(mean over observed i of (lambda_j' omega_i - x_ij), 1 / n_j) under
-//' a flat prior. Items with no observations get alpha_j = 0.
-//'
-//' @keywords internal
-//'
-//' @param data output of \code{prepare_data}.
-//' @param x latent values, one per observed cell.
-//' @param lambda P x K loadings.
-//' @param omega N x K factor scores.
-//' @param seed,iter seed and iteration; item j uses its own alpha-kernel stream.
-//'
-//' @return Numeric vector of length P.
-// [[Rcpp::export(name = ".sample_alpha_sparse")]]
-arma::vec sample_alpha_sparse(const Rcpp::List& data, const Rcpp::NumericVector& x,
-                              const arma::mat& lambda, const arma::mat& omega,
-                              double seed, double iter) {
-    const mmbpfa::Data d(data);
-    const arma::mat omega_t = omega.t();
-    const arma::rowvec omega_sum = arma::sum(omega, 0);   // sum_i omega_i, for fully observed items
-    arma::vec alpha(d.p, arma::fill::zeros);
-    #pragma omp parallel for schedule(static) num_threads(mmbpfa::num_threads())
-    for (int j = 0; j < d.p; j++) {
-        const int begin = d.col_ptr[j], end = d.col_ptr[j + 1], n_j = end - begin;
-        if (n_j == 0) continue;
-        const arma::rowvec lam_j = lambda.row(j);
-        double total = 0;
-        if (n_j == d.n) {
-            total = arma::dot(lam_j, omega_sum);
-            for (int c = begin; c < end; c++) total -= x[c];
-        } else {
-            for (int c = begin; c < end; c++) total += arma::dot(lam_j, omega_t.col(d.row_idx[c])) - x[c];
-        }
-        mmbpfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter), mmbpfa::stream_id(mmbpfa::KERNEL_ALPHA, j));
-        alpha[j] = total / n_j + rng.norm() / std::sqrt(static_cast<double>(n_j));
-    }
-    return alpha;
-}
-
 //' Sample factor scores from observed cells
 //'
-//' omega_i ~ N(S_i sum_{j in obs(i)} lambda_j (x_ij + alpha_j), S_i) with
+//' omega_i ~ N(S_i sum_{j in obs(i)} lambda_j x_ij, S_i) with
 //' S_i = (sum_{j in obs(i)} lambda_j lambda_j' + I)^-1, drawn through the
 //' Cholesky factor of S_i^-1. Fully observed rows share one precision matrix
 //' and are drawn together; rows missing fewer than half their items start from
@@ -114,13 +74,12 @@ arma::vec sample_alpha_sparse(const Rcpp::List& data, const Rcpp::NumericVector&
 //' @param data output of \code{prepare_data}.
 //' @param x latent values, one per observed cell.
 //' @param lambda P x K loadings.
-//' @param alpha item intercepts, length P.
 //' @param seed,iter seed and iteration; row i uses its own omega-kernel stream.
 //'
 //' @return N x K matrix.
 // [[Rcpp::export(name = ".sample_omega_sparse")]]
 arma::mat sample_omega_sparse(const Rcpp::List& data, const Rcpp::NumericVector& x,
-                              const arma::mat& lambda, const arma::vec& alpha,
+                              const arma::mat& lambda,
                               double seed, double iter) {
     const mmbpfa::Data d(data);
     const int K = lambda.n_cols;
@@ -145,7 +104,7 @@ arma::mat sample_omega_sparse(const Rcpp::List& data, const Rcpp::NumericVector&
         arma::vec rhs(K, arma::fill::zeros), z(K);
         for (int r = begin; r < end; r++) {
             const int c = d.cell_of_row[r], j = d.col_idx[c];
-            const double w = x[c] + alpha[j];
+            const double w = x[c];
             const double* l = lambda_t.colptr(j);
             for (int k = 0; k < K; k++) rhs[k] += l[k] * w;
         }
@@ -154,14 +113,14 @@ arma::mat sample_omega_sparse(const Rcpp::List& data, const Rcpp::NumericVector&
 
         if (n_i > 0 && 2 * n_i < K) {
             // Bhattacharya, Chakraborty & Mallick (2016): with Phi = lambda_obs (n_i x K) and
-            // a = x_obs + alpha_obs, draw u ~ N(0, I_K), delta ~ N(0, I_n), solve
+            // a = x_obs, draw u ~ N(0, I_K), delta ~ N(0, I_n), solve
             // (Phi Phi' + I_n) w = a - (Phi u + delta), return u + Phi' w. Exact, O(n_i^2 K).
             std::vector<int> cols(n_i);
             std::vector<double> a(n_i), w(n_i), M(n_i * n_i);
             for (int r = 0; r < n_i; r++) {
                 const int c = d.cell_of_row[begin + r];
                 cols[r] = d.col_idx[c];
-                a[r] = x[c] + alpha[cols[r]];
+                a[r] = x[c];
             }
             for (int r = 0; r < n_i; r++) {
                 const double* lr = lambda_t.colptr(cols[r]);

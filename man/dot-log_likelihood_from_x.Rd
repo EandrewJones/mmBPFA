@@ -4,7 +4,7 @@
 \alias{.log_likelihood_from_x}
 \title{Log-likelihood of the observed data given latent x (test entry point)}
 \usage{
-.log_likelihood_from_x(data, x, lambda, omega, alpha)
+.log_likelihood_from_x(data, x, lambda, omega)
 }
 \description{
 Thresholds are the midpoints between adjacent levels of x, as in the sampler.

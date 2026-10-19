@@ -26,10 +26,9 @@ fake_results <- function(L, O, n_draws = 6, chains = 1, flip_chain2 = FALSE) {
          z = lapply(draws, function(t) swap(Zf, t)),
          c = lapply(draws, function(t) c(3L, 3L, 1L)),
          omega = lapply(draws, function(t) swap(Of, t)),
-         alpha = lapply(draws, function(t) rep(0, p)),
          theta = lapply(draws, function(t) swap(matrix(c(1, 2, 0.05), 1), t)[1, ]),
          a_cusp = rep(1, n_draws), K = rep(2L, n_draws), log_lik = rep(-10, n_draws),
-         thresholds = rep(0, p))
+         thresholds = rep(0, p), threshold_draws = matrix(0, p, n_draws))
   }
   res <- lapply(seq_len(chains), one_chain)
   structure(res, class = "bpfa.results", priors = resolve_priors("uniform", p, H = 3),
@@ -103,7 +102,6 @@ test_that("check_accuracy compares as many dimensions as are both true and stabl
     "Factor Loadings" = tibble::as_tibble(cbind(row = 1:p, est_L), .name_repair = "minimal"),
     "Factor Scores" = tibble::as_tibble(cbind(row = 1:n, est_O), .name_repair = "minimal"),
     "Slab Variances" = tibble::tibble(dimension = 1:4, theta = rep(1, 4)),
-    "Item-level Intercepts" = tibble::tibble(item = 1:p, alpha = rep(0, p)),
     "Cutpoints" = rep(list(c(0, Inf)), p)
   )
   class(res) <- "mcmc.output.processed"
@@ -125,4 +123,16 @@ test_that("process_results runs on real sampler output, with standard errors", {
   expect_length(out[["Cutpoints"]], 30)
   acc <- check_accuracy(y, suppressWarnings(process_results(res, SE = FALSE)), confusion = TRUE)
   expect_true(acc$GMP > 0 && acc$GMP < 1)
+})
+
+test_that("results with no counted dimensions are processed into empty loadings and scores", {
+  res <- fake_results(L, O)
+  res[[1]]$c <- lapply(res[[1]]$c, function(cc) c(1L, 1L, 1L))     # every column off
+  out <- process_results(res, SE = FALSE)
+  expect_equal(out[["Median Number Dimensions"]], 0)
+  expect_length(out[["Stable Dimensions"]], 0)
+  expect_equal(dim(out[["Factor Loadings"]]), c(6L, 1L))           # the row column only
+  expect_equal(dim(out[["Factor Scores"]]), c(4L, 1L))
+  out_se <- process_results(res)
+  expect_equal(nrow(out_se[["Factor Loadings"]]), 0)
 })

@@ -53,9 +53,10 @@ and \code{"column_scale"} (trade scale between each column's loadings and scores
 \value{
 Object of class \code{bpfa.results}: a list with one element per chain,
 each holding the kept draws (\code{lambda}, \code{z}, \code{c}, \code{omega},
-\code{alpha}, \code{theta}, \code{a_cusp}), the number of counted dimensions
-\code{K} and the log-likelihood \code{log_lik} per draw, and posterior-mean level
-\code{thresholds}, and \code{seconds_per_sweep} (sampling time, excluding setup). Attributes record the priors (see \code{\link{get_priors}})
+\code{theta}, \code{a_cusp}), the number of counted dimensions \code{K} and the
+log-likelihood \code{log_lik} per draw, posterior-mean level \code{thresholds}, the
+thresholds of items with at most 10 levels for every draw (\code{threshold_draws}),
+and \code{seconds_per_sweep} (sampling time, excluding setup). Attributes record the priors (see \code{\link{get_priors}})
 and the run settings.
 }
 \description{

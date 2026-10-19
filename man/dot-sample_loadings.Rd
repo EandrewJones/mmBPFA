@@ -4,7 +4,7 @@
 \alias{.sample_loadings}
 \title{One Gibbs update of the loadings block}
 \usage{
-.sample_loadings(data, x, omega, alpha, state, prior, seed, iter)
+.sample_loadings(data, x, omega, state, prior, seed, iter)
 }
 \arguments{
 \item{data}{output of \code{prepare_data}.}
@@ -12,8 +12,6 @@
 \item{x}{latent values, one per observed cell.}
 
 \item{omega}{N x H factor scores.}
-
-\item{alpha}{item intercepts.}
 
 \item{state}{list with lambda (P x H), z (P x H integer), rho, c (1-based), v, a_cusp, theta.}
 

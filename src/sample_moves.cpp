@@ -44,35 +44,30 @@ double draw_gig(double p, double chi, double psi, mmbpfa::Rng& rng) {
 
 //' Item scale move
 //'
-//' For each item j, (x_j, lambda_j, alpha_j) -> s_j (x_j, lambda_j, alpha_j). The ranks
-//' of x_j are unchanged, and s_j^2 ~ Gamma((n_j + m_j) / 2, A_j / 2) with
-//' A_j = sum_obs (x_ij - mu_ij)^2 + sum_k z_jk lambda_jk^2 / theta_k: the parameter-expanded
-//' data augmentation of Liu & Wu (1999) for probit models, per item.
-//'
-//' alpha_j is not identified under the rank likelihood (shifting x_j and alpha_j together
-//' changes nothing) and its flat prior makes that direction improper. The move must leave
-//' the proper posterior of x_j + alpha_j invariant, so alpha_j is scaled along but does not
-//' add to the Jacobian; counting it gives shape (n_j + m_j + 1) / 2 and the scales drift up.
+//' For each item j, (x_j, lambda_j) -> s_j (x_j, lambda_j). The ranks of x_j are unchanged,
+//' and s_j^2 ~ Gamma((n_j + m_j) / 2, A_j / 2) with A_j = sum_obs (x_ij - lambda_j' omega_i)^2
+//' + sum_k z_jk lambda_jk^2 / theta_k: the parameter-expanded data augmentation of
+//' Liu & Wu (1999) for probit models, per item.
 //'
 //' @keywords internal
 //'
-//' @return list with x, lambda, alpha and the scales s.
+//' @return list with x, lambda and the scales s.
 // [[Rcpp::export(name = ".item_scale_move")]]
 Rcpp::List item_scale_move(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& lambda,
-                           const arma::imat& z, const arma::mat& omega, const arma::vec& alpha,
+                           const arma::imat& z, const arma::mat& omega,
                            const arma::vec& theta, double seed, double iter) {
     const mmbpfa::Data d(data);
     const arma::mat omega_t = omega.t();
     Rcpp::NumericVector x_out = Rcpp::clone(x);
     arma::mat lambda_out = lambda;
-    arma::vec alpha_out = alpha, s(d.p, arma::fill::ones);
+    arma::vec s(d.p, arma::fill::ones);
     #pragma omp parallel for schedule(dynamic, 8) num_threads(mmbpfa::num_threads())
     for (int j = 0; j < d.p; j++) {
         const int begin = d.col_ptr[j], end = d.col_ptr[j + 1];
         const arma::rowvec lam_j = lambda.row(j);
         double A = 0, m = 0;
         for (int c = begin; c < end; c++) {
-            const double r = x[c] - (arma::dot(lam_j, omega_t.col(d.row_idx[c])) - alpha[j]);
+            const double r = x[c] - arma::dot(lam_j, omega_t.col(d.row_idx[c]));
             A += r * r;
         }
         for (arma::uword k = 0; k < lambda.n_cols; k++)
@@ -83,10 +78,8 @@ Rcpp::List item_scale_move(const Rcpp::List& data, const Rcpp::NumericVector& x,
         s[j] = sj;
         for (int c = begin; c < end; c++) x_out[c] *= sj;
         lambda_out.row(j) *= sj;
-        alpha_out[j] *= sj;
     }
     return Rcpp::List::create(Rcpp::Named("x") = x_out, Rcpp::Named("lambda") = lambda_out,
-                              Rcpp::Named("alpha") = Rcpp::NumericVector(alpha_out.begin(), alpha_out.end()),
                               Rcpp::Named("s") = Rcpp::NumericVector(s.begin(), s.end()));
 }
 

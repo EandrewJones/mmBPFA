@@ -9,7 +9,6 @@
   x0,
   state0,
   omega0,
-  alpha0,
   prior,
   warmup,
   iter,
@@ -26,7 +25,7 @@
 
 \item{state0}{starting loadings state (see \code{.sample_loadings}).}
 
-\item{omega0, alpha0}{starting factor scores and intercepts.}
+\item{omega0}{starting factor scores.}
 
 \item{prior}{resolved priors.}
 
@@ -39,7 +38,8 @@
 \item{moves}{bit mask of extra scale moves: 1 item scale, 2 column scale.}
 }
 \value{
-List of kept draws and summaries.
+List of kept draws and summaries. \code{threshold_draws} holds, for every kept draw,
+the thresholds of items with at most 10 levels (rows in item order).
 }
 \description{
 Run one chain

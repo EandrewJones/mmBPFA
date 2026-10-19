@@ -10,8 +10,8 @@ ref_thresholds <- function(x, dat) {
   })
 }
 
-ref_log_lik <- function(lambda, omega, alpha, dat, thresholds) {
-  mu <- omega %*% t(lambda) - matrix(alpha, nrow(omega), ncol(dat), byrow = TRUE)
+ref_log_lik <- function(lambda, omega, dat, thresholds) {
+  mu <- omega %*% t(lambda)
   sum(cell_log_probs(mu, dat, thresholds), na.rm = TRUE)
 }
 
@@ -23,10 +23,10 @@ test_that("the reference thresholds sit midway in the gap between adjacent level
 
 test_that("cell log-probabilities are the ordered-probit probability of the observed level", {
   # mu = (1, -1) for y = (1, 0) with threshold 0: each cell has probability pnorm(1)
-  expect_equal(ref_log_lik(matrix(1, 1, 1), matrix(c(1, -1), 2, 1), 0, cbind(c(1, 0)), list(0)),
+  expect_equal(ref_log_lik(matrix(1, 1, 1), matrix(c(1, -1), 2, 1), cbind(c(1, 0)), list(0)),
                2 * log(0.8413447), tolerance = 1e-6)
   # mu = 0, y = (0, 1, 2, NA), thresholds (-1, 1)
-  expect_equal(ref_log_lik(matrix(0, 1, 1), matrix(0, 4, 1), 0, cbind(c(0, 1, 2, NA)), list(c(-1, 1))),
+  expect_equal(ref_log_lik(matrix(0, 1, 1), matrix(0, 4, 1), cbind(c(0, 1, 2, NA)), list(c(-1, 1))),
                2 * log(0.1586553) + log(0.6826895), tolerance = 1e-6)
 })
 
@@ -36,9 +36,9 @@ test_that("the sampler's log-likelihood matches the reference on mixed data with
   y <- cbind(matrix(rbinom(n * 3, 1, 0.4), n, 3), matrix(rpois(n * 2, 2), n, 2), rnorm(n))
   y[sample(length(y), 40)] <- NA
   d <- prepare_data(y); x <- initial_x(d)
-  lam <- matrix(rnorm(p * K, 0, 0.5), p, K); om <- matrix(rnorm(n * K), n, K); al <- rnorm(p, 0, 0.3)
-  want <- ref_log_lik(lam, om, al, y, ref_thresholds(cells_to_matrix(d, x), y))
-  expect_equal(.log_likelihood_from_x(d, x, lam, om, al), want, tolerance = 1e-10)
+  lam <- matrix(rnorm(p * K, 0, 0.5), p, K); om <- matrix(rnorm(n * K), n, K)
+  want <- ref_log_lik(lam, om, y, ref_thresholds(cells_to_matrix(d, x), y))
+  expect_equal(.log_likelihood_from_x(d, x, lam, om), want, tolerance = 1e-10)
 })
 
 test_that("GMP is the geometric mean predictive probability of the observed data", {

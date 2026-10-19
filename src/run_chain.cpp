@@ -34,7 +34,7 @@ std::vector<double> level_thresholds(const mmbpfa::Data& d, const Rcpp::NumericV
 }
 
 double log_likelihood(const mmbpfa::Data& d, const std::vector<double>& th, const arma::mat& lambda,
-                      const arma::mat& omega, const arma::vec& alpha) {
+                      const arma::mat& omega) {
     const arma::mat omega_t = omega.t();
     std::vector<int> offset(d.p + 1, 0);     // start of column j's thresholds in th
     for (int j = 0; j < d.p; j++) offset[j + 1] = offset[j] + std::max(d.n_levels[j] - 1, 0);
@@ -49,7 +49,7 @@ double log_likelihood(const mmbpfa::Data& d, const std::vector<double>& th, cons
                 const double lo = v > 0 ? th[offset[j] + v - 1] : R_NegInf;
                 const double hi = v + 1 < L ? th[offset[j] + v] : R_PosInf;
                 for (int c = d.level_begin(j, v); c < d.level_begin(j, v + 1); c++) {
-                    const double mu = arma::dot(lam_j, omega_t.col(d.row_idx[c])) - alpha[j];
+                    const double mu = arma::dot(lam_j, omega_t.col(d.row_idx[c]));
                     ll += log_interval_prob(lo - mu, hi - mu);
                 }
             }
@@ -70,9 +70,9 @@ double log_likelihood(const mmbpfa::Data& d, const std::vector<double>& th, cons
 //' @keywords internal
 // [[Rcpp::export(name = ".log_likelihood_from_x")]]
 double log_likelihood_from_x(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& lambda,
-                             const arma::mat& omega, const arma::vec& alpha) {
+                             const arma::mat& omega) {
     const mmbpfa::Data d(data);
-    return log_likelihood(d, level_thresholds(d, x), lambda, omega, alpha);
+    return log_likelihood(d, level_thresholds(d, x), lambda, omega);
 }
 
 //' Run one chain
@@ -82,47 +82,56 @@ double log_likelihood_from_x(const Rcpp::List& data, const Rcpp::NumericVector& 
 //' @param data output of \code{prepare_data}.
 //' @param x0 starting latent values (rank consistent, see \code{initial_x}).
 //' @param state0 starting loadings state (see \code{.sample_loadings}).
-//' @param omega0,alpha0 starting factor scores and intercepts.
+//' @param omega0 starting factor scores.
 //' @param prior resolved priors.
 //' @param warmup,iter,thin numbers of warmup and sampling iterations, and thinning.
 //' @param seed chain seed.
 //' @param threads OpenMP threads used inside the chain.
 //' @param moves bit mask of extra scale moves: 1 item scale, 2 column scale.
 //'
-//' @return List of kept draws and summaries.
+//' @return List of kept draws and summaries. \code{threshold_draws} holds, for every kept draw,
+//'   the thresholds of items with at most 10 levels (rows in item order).
 // [[Rcpp::export(name = ".run_chain")]]
 Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List state0,
-                     arma::mat omega0, arma::vec alpha0, const Rcpp::List& prior,
+                     arma::mat omega0, const Rcpp::List& prior,
                      int warmup, int iter, int thin, double seed, int threads, int moves) {
     mmbpfa::num_threads() = threads < 1 ? 1 : threads;
     const mmbpfa::Data d(data);
     Rcpp::NumericVector x = Rcpp::clone(x0);
     Rcpp::List state = state0;
     arma::mat omega = omega0;
-    arma::vec alpha = alpha0;
     const int n_keep = iter / thin;
 
     Rcpp::List keep_lambda(n_keep), keep_z(n_keep), keep_c(n_keep), keep_omega(n_keep),
-        keep_alpha(n_keep), keep_theta(n_keep);
+        keep_theta(n_keep);
     Rcpp::NumericVector keep_a(n_keep), keep_ll(n_keep);
     Rcpp::IntegerVector keep_K(n_keep);
     std::vector<double> th_sum;
+    // thresholds of items with at most max_stored_levels levels are kept for every draw
+    const int max_stored_levels = 10;
+    std::vector<int> stored;                        // positions in the flat threshold vector
+    for (int j = 0, pos = 0; j < d.p; j++) {
+        const int n_th = std::max(d.n_levels[j] - 1, 0);
+        if (d.n_levels[j] <= max_stored_levels)
+            for (int v = 0; v < n_th; v++) stored.push_back(pos + v);
+        pos += n_th;
+    }
+    Rcpp::NumericMatrix keep_th(stored.size(), n_keep);
 
     int kept = 0;
     const auto start = std::chrono::steady_clock::now();
     for (int t = 1; t <= warmup + iter; t++) {
         arma::mat lambda = Rcpp::as<arma::mat>(state["lambda"]);
-        x = sample_x_sparse(data, x, lambda, omega, alpha, seed, t);
-        state = sample_loadings(data, x, omega, alpha, state, prior, seed, t);
+        x = sample_x_sparse(data, x, lambda, omega, seed, t);
+        state = sample_loadings(data, x, omega, state, prior, seed, t);
         lambda = Rcpp::as<arma::mat>(state["lambda"]);
-        omega = sample_omega_sparse(data, x, lambda, alpha, seed, t);
-        alpha = sample_alpha_sparse(data, x, lambda, omega, seed, t);
+        omega = sample_omega_sparse(data, x, lambda, seed, t);
         if (moves) {
             const arma::imat z = Rcpp::as<arma::imat>(state["z"]);
             const arma::vec theta = Rcpp::as<arma::vec>(state["theta"]);
             if (moves & 1) {
-                Rcpp::List mv = item_scale_move(data, x, lambda, z, omega, alpha, theta, seed, t);
-                x = mv["x"]; lambda = Rcpp::as<arma::mat>(mv["lambda"]); alpha = Rcpp::as<arma::vec>(mv["alpha"]);
+                Rcpp::List mv = item_scale_move(data, x, lambda, z, omega, theta, seed, t);
+                x = mv["x"]; lambda = Rcpp::as<arma::mat>(mv["lambda"]);
             }
             if (moves & 2) {
                 Rcpp::List mv = column_scale_move(lambda, z, omega, theta, seed, t);
@@ -140,16 +149,16 @@ Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List 
             const std::vector<double> th = level_thresholds(d, x);
             if (th_sum.empty()) th_sum.assign(th.size(), 0.0);
             for (size_t i = 0; i < th.size(); i++) th_sum[i] += th[i];
+            for (size_t r = 0; r < stored.size(); r++) keep_th(r, kept) = th[stored[r]];
 
             keep_lambda[kept] = lambda;
             keep_z[kept] = z;
             keep_c[kept] = c;
             keep_omega[kept] = omega;
-            keep_alpha[kept] = alpha;
             keep_theta[kept] = Rcpp::as<arma::vec>(state["theta"]);
             keep_a[kept] = Rcpp::as<double>(state["a_cusp"]);
             keep_K[kept] = K;
-            keep_ll[kept] = log_likelihood(d, th, lambda, omega, alpha);
+            keep_ll[kept] = log_likelihood(d, th, lambda, omega);
             kept++;
         }
         if (t % 50 == 0) Rcpp::checkUserInterrupt();
@@ -159,9 +168,9 @@ Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List 
 
     return Rcpp::List::create(
         Rcpp::Named("lambda") = keep_lambda, Rcpp::Named("z") = keep_z, Rcpp::Named("c") = keep_c,
-        Rcpp::Named("omega") = keep_omega, Rcpp::Named("alpha") = keep_alpha,
+        Rcpp::Named("omega") = keep_omega,
         Rcpp::Named("theta") = keep_theta, Rcpp::Named("a_cusp") = keep_a,
         Rcpp::Named("K") = keep_K, Rcpp::Named("log_lik") = keep_ll,
-        Rcpp::Named("thresholds") = th_sum,
+        Rcpp::Named("thresholds") = th_sum, Rcpp::Named("threshold_draws") = keep_th,
         Rcpp::Named("seconds_per_sweep") = seconds / (warmup + iter));
 }

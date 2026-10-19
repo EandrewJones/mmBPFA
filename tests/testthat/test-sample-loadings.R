@@ -31,7 +31,7 @@ test_that("lambda given z = 1 is Gaussian, with and without missing cells", {
   xm <- cells_to_matrix(f$d, f$x)
   prec <- colSums((obs * as.vector(f$om))^2) + 1 / 2
   mu <- colSums(obs * as.vector(f$om) * ifelse(obs, xm, 0)) / prec
-  l <- sapply(1:4000, function(t) .sample_loadings(f$d, f$x, f$om, rep(0, 8), st, default_prior(), 1, t)$lambda[, 1])
+  l <- sapply(1:4000, function(t) .sample_loadings(f$d, f$x, f$om, st, default_prior(), 1, t)$lambda[, 1])
   expect_z(rowMeans(l), mu, sqrt(1 / prec / 4000))
   expect_rel(apply(l, 1, var), 1 / prec, 0.1)
   }
@@ -47,7 +47,7 @@ test_that("z_jk is Bernoulli with the collapsed log-odds, with and without missi
   mu <- colSums(obs * as.vector(f$om) * ifelse(obs, xm, 0)) / prec
   lo <- qlogis(0.3) + 0.5 * (log(1) - log(prec)) + 0.5 * prec * mu^2
   want <- plogis(lo)
-  z <- sapply(1:6000, function(t) .sample_loadings(f$d, f$x, f$om, rep(0, 5), st, default_prior(), 2, t)$z[, 1])
+  z <- sapply(1:6000, function(t) .sample_loadings(f$d, f$x, f$om, st, default_prior(), 2, t)$z[, 1])
   expect_z(rowMeans(z), want, sqrt(pmax(want * (1 - want), 1e-4) / 6000))
   }
 })
@@ -129,7 +129,7 @@ test_that("with no data the sampler leaves the CUSP prior on the number of activ
   st <- new_state(p, H, on = 3)
   on <- integer(0)
   for (t in 1:30000) {
-    st <- .sample_loadings(d, numeric(0), matrix(0, n, H), rep(0, p), st, pr, 7, t)
+    st <- .sample_loadings(d, numeric(0), matrix(0, n, H), st, pr, 7, t)
     if (t %% 10 == 0) on <- c(on, sum(st$c > seq_len(H)))
   }
   set.seed(8)
@@ -149,7 +149,7 @@ test_that("a loadings sweep on fully observed data uses one matrix-vector produc
   st <- new_state(p, H); st$lambda <- matrix(rnorm(p * H, 0, 0.3), p, H); st$z[] <- 1L
   om <- matrix(rnorm(n * H), n, H)
   t0 <- proc.time()[["elapsed"]]
-  for (r in 1:5) .sample_loadings(d, x, om, rep(0, p), st, default_prior(), 1, r)
+  for (r in 1:5) .sample_loadings(d, x, om, st, default_prior(), 1, r)
   # was 0.044 s with per-cell loops; ~0.026 s with the reference BLAS (faster with OpenBLAS/MKL)
   expect_lt((proc.time()[["elapsed"]] - t0) / 5, 0.035)
 })

@@ -16,7 +16,7 @@ test_that("the sampler stores one draw per kept iteration with the documented sh
   expect_length(ch$log_lik, 10)
   expect_equal(dim(ch$lambda[[1]]), c(40L, 19L))     # H = min(floor(39 / 2), 50)
   expect_equal(dim(ch$omega[[1]]), c(60L, 19L))
-  expect_length(ch$alpha[[1]], 40)
+  expect_null(ch$alpha)
   expect_true(all(is.finite(ch$log_lik)))
 })
 

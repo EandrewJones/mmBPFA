@@ -4,7 +4,7 @@
 \alias{.sample_omega_sparse}
 \title{Sample factor scores from observed cells}
 \usage{
-.sample_omega_sparse(data, x, lambda, alpha, seed, iter)
+.sample_omega_sparse(data, x, lambda, seed, iter)
 }
 \arguments{
 \item{data}{output of \code{prepare_data}.}
@@ -13,15 +13,13 @@
 
 \item{lambda}{P x K loadings.}
 
-\item{alpha}{item intercepts, length P.}
-
 \item{seed, iter}{seed and iteration; row i uses its own omega-kernel stream.}
 }
 \value{
 N x K matrix.
 }
 \description{
-omega_i ~ N(S_i sum_{j in obs(i)} lambda_j (x_ij + alpha_j), S_i) with
+omega_i ~ N(S_i sum_{j in obs(i)} lambda_j x_ij, S_i) with
 S_i = (sum_{j in obs(i)} lambda_j lambda_j' + I)^-1, drawn through the
 Cholesky factor of S_i^-1. Fully observed rows share one precision matrix
 and are drawn together; rows missing fewer than half their items start from

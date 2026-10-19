@@ -29,9 +29,10 @@
 #'
 #' @return Object of class \code{bpfa.results}: a list with one element per chain,
 #'   each holding the kept draws (\code{lambda}, \code{z}, \code{c}, \code{omega},
-#'   \code{alpha}, \code{theta}, \code{a_cusp}), the number of counted dimensions
-#'   \code{K} and the log-likelihood \code{log_lik} per draw, and posterior-mean level
-#'   \code{thresholds}, and \code{seconds_per_sweep} (sampling time, excluding setup). Attributes record the priors (see \code{\link{get_priors}})
+#'   \code{theta}, \code{a_cusp}), the number of counted dimensions \code{K} and the
+#'   log-likelihood \code{log_lik} per draw, posterior-mean level \code{thresholds}, the
+#'   thresholds of items with at most 10 levels for every draw (\code{threshold_draws}),
+#'   and \code{seconds_per_sweep} (sampling time, excluding setup). Attributes record the priors (see \code{\link{get_priors}})
 #'   and the run settings.
 #'
 #' @export
@@ -61,9 +62,11 @@ mmBPFA_sampler <- function(
         K_start <- prior$H
     }
 
-    # kept draws store lambda and z (P x H), omega (N x H), alpha (P) and column vectors
+    # kept draws store lambda and z (P x H), omega (N x H), column vectors and the
+    # thresholds of items with at most 10 levels
     H <- prior$H
-    gb <- 8 * chains * floor(iter / thin) * (2 * data$p * H + data$n * H + data$p + 3 * H) / 1e9
+    n_th <- sum(pmax(data$n_levels[data$n_levels <= 10] - 1, 0))
+    gb <- 8 * chains * floor(iter / thin) * (2 * data$p * H + data$n * H + n_th + 3 * H) / 1e9
     if (gb > max_memory_gb) {
         stop(sprintf(paste0("Stored draws would need about %.2f GB (limit %.2f GB); ",
                             "increase `thin`, reduce `iter`, or raise `max_memory_gb`."), gb, max_memory_gb))
@@ -108,7 +111,7 @@ run_one_chain <- function(data, prior, K_start, warmup, iter, thin, seed, thread
         theta = ifelse(on, 1, prior$spike_var)
     )
     omega <- matrix(rnorm(n * H), n, H)
-    .run_chain(data, initial_x(data), state, omega, rep(0, p), prior, warmup, iter, thin, seed, threads,
+    .run_chain(data, initial_x(data), state, omega, prior, warmup, iter, thin, seed, threads,
                sum(c(item_scale = 1L, column_scale = 2L)[moves]))
 }
 

@@ -1,15 +1,3 @@
-# Shared fixtures: data drawn from the paper's generative model with known
-# parameters, x = Omega Lambda' - 1 alpha' + eps, eps ~ N(0, 1).
-sim_latent <- function(n = 300, p = 40, K = 2, seed = 1) {
-  set.seed(seed)
-  lambda <- matrix(rnorm(p * K), p, K)
-  omega <- matrix(rnorm(n * K), n, K)
-  alpha <- rnorm(p, 0, 0.5)
-  mu <- omega %*% t(lambda) - matrix(alpha, n, p, byrow = TRUE)
-  list(x = mu + matrix(rnorm(n * p), n, p), mu = mu,
-       lambda = lambda, omega = omega, alpha = alpha)
-}
-
 # Monte Carlo draws of a sampler that returns a vector; one column per draw.
 draws <- function(n_draws, f) vapply(seq_len(n_draws), function(i) f(), f())
 

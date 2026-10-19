@@ -35,7 +35,7 @@ run_sparse_chain <- function(y, iters) {
   x <- initial_x(d)
   pooled <- numeric(0); ok <- ordered_ok(cells_to_matrix(d, x), y)
   for (t in seq_len(iters)) {
-    x <- .sample_x_sparse(d, x, matrix(0, d$p, 1), matrix(0, d$n, 1), rep(0, d$p), 1, t)
+    x <- .sample_x_sparse(d, x, matrix(0, d$p, 1), matrix(0, d$n, 1), 1, t)
     ok <- ok && ordered_ok(cells_to_matrix(d, x), y)
     if (t > iters / 2) pooled <- c(pooled, x)
   }
@@ -66,16 +66,16 @@ test_that("count and continuous columns keep the ordering and are N(0, 1)", {
   expect_rel(var(r$pooled), 1, 0.05)
 })
 
-test_that("unconstrained cells are N(lambda_j' omega_i - alpha_j, 1)", {
+test_that("unconstrained cells are N(lambda_j' omega_i, 1)", {
   # single-level columns carry no ordering, so x - mu must be exactly standard normal
   set.seed(4)
   n <- 500; p <- 4
   y <- matrix(1, n, p); y[sample(n * p, 200)] <- NA
   d <- prepare_data(y)
   lam <- matrix(c(1, -2, 0.5, 0, 0.3, 1, -1, 2), p, 2)
-  om <- matrix(rnorm(n * 2), n, 2); al <- c(0.5, -1, 2, 0)
-  mu <- om %*% t(lam) - matrix(al, n, p, byrow = TRUE)
-  x <- .sample_x_sparse(d, rep(0, length(d$value)), lam, om, al, 1, 0)
+  om <- matrix(rnorm(n * 2), n, 2)
+  mu <- om %*% t(lam)
+  x <- .sample_x_sparse(d, rep(0, length(d$value)), lam, om, 1, 0)
   r <- (cells_to_matrix(d, x) - mu)[!is.na(y)]
   expect_lt(abs(mean(r)), 4.5 / sqrt(length(r)))
   expect_rel(var(r), 1, 0.08)
@@ -83,15 +83,15 @@ test_that("unconstrained cells are N(lambda_j' omega_i - alpha_j, 1)", {
 
 test_that("the same seed and iteration give identical draws", {
   y <- matrix(rbinom(200, 1, 0.5), 20, 10); d <- prepare_data(y); x0 <- rnorm(length(d$value))
-  a <- .sample_x_sparse(d, x0, matrix(0, 10, 1), matrix(0, 20, 1), rep(0, 10), 7, 3)
-  expect_identical(a, .sample_x_sparse(d, x0, matrix(0, 10, 1), matrix(0, 20, 1), rep(0, 10), 7, 3))
+  a <- .sample_x_sparse(d, x0, matrix(0, 10, 1), matrix(0, 20, 1), 7, 3)
+  expect_identical(a, .sample_x_sparse(d, x0, matrix(0, 10, 1), matrix(0, 20, 1), 7, 3))
 })
 
 test_that("a continuous column of 5000 rows costs O(n) per sweep", {
   y <- matrix(rnorm(5000 * 20), 5000, 20); d <- prepare_data(y)
   x <- rnorm(length(d$value)); lam <- matrix(0, 20, 1); om <- matrix(0, 5000, 1)
   t0 <- proc.time()[["elapsed"]]
-  for (t in 1:10) x <- .sample_x_sparse(d, x, lam, om, rep(0, 20), 1, t)
+  for (t in 1:10) x <- .sample_x_sparse(d, x, lam, om, 1, t)
   expect_lt((proc.time()[["elapsed"]] - t0) / 10, 0.05)
 })
 

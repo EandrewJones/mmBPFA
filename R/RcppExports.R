@@ -14,8 +14,8 @@
 #' Thresholds are the midpoints between adjacent levels of x, as in the sampler.
 #'
 #' @keywords internal
-.log_likelihood_from_x <- function(data, x, lambda, omega, alpha) {
-    .Call(`_mmBPFA_log_likelihood_from_x`, data, x, lambda, omega, alpha)
+.log_likelihood_from_x <- function(data, x, lambda, omega) {
+    .Call(`_mmBPFA_log_likelihood_from_x`, data, x, lambda, omega)
 }
 
 #' Run one chain
@@ -25,57 +25,17 @@
 #' @param data output of \code{prepare_data}.
 #' @param x0 starting latent values (rank consistent, see \code{initial_x}).
 #' @param state0 starting loadings state (see \code{.sample_loadings}).
-#' @param omega0,alpha0 starting factor scores and intercepts.
+#' @param omega0 starting factor scores.
 #' @param prior resolved priors.
 #' @param warmup,iter,thin numbers of warmup and sampling iterations, and thinning.
 #' @param seed chain seed.
 #' @param threads OpenMP threads used inside the chain.
 #' @param moves bit mask of extra scale moves: 1 item scale, 2 column scale.
 #'
-#' @return List of kept draws and summaries.
-.run_chain <- function(data, x0, state0, omega0, alpha0, prior, warmup, iter, thin, seed, threads, moves) {
-    .Call(`_mmBPFA_run_chain`, data, x0, state0, omega0, alpha0, prior, warmup, iter, thin, seed, threads, moves)
-}
-
-#' Sample item intercepts from observed cells
-#'
-#' alpha_j ~ N(mean over observed i of (lambda_j' omega_i - x_ij), 1 / n_j) under
-#' a flat prior. Items with no observations get alpha_j = 0.
-#'
-#' @keywords internal
-#'
-#' @param data output of \code{prepare_data}.
-#' @param x latent values, one per observed cell.
-#' @param lambda P x K loadings.
-#' @param omega N x K factor scores.
-#' @param seed,iter seed and iteration; item j uses its own alpha-kernel stream.
-#'
-#' @return Numeric vector of length P.
-.sample_alpha_sparse <- function(data, x, lambda, omega, seed, iter) {
-    .Call(`_mmBPFA_sample_alpha_sparse`, data, x, lambda, omega, seed, iter)
-}
-
-#' Sample factor scores from observed cells
-#'
-#' omega_i ~ N(S_i sum_{j in obs(i)} lambda_j (x_ij + alpha_j), S_i) with
-#' S_i = (sum_{j in obs(i)} lambda_j lambda_j' + I)^-1, drawn through the
-#' Cholesky factor of S_i^-1. Fully observed rows share one precision matrix
-#' and are drawn together; rows missing fewer than half their items start from
-#' the shared matrix and subtract the missing items; rows observed on fewer than
-#' K/2 items use the n_i x n_i sampler of Bhattacharya, Chakraborty & Mallick (2016);
-#' other rows accumulate their observed items. Rows with no observations draw from N(0, I).
-#'
-#' @keywords internal
-#'
-#' @param data output of \code{prepare_data}.
-#' @param x latent values, one per observed cell.
-#' @param lambda P x K loadings.
-#' @param alpha item intercepts, length P.
-#' @param seed,iter seed and iteration; row i uses its own omega-kernel stream.
-#'
-#' @return N x K matrix.
-.sample_omega_sparse <- function(data, x, lambda, alpha, seed, iter) {
-    .Call(`_mmBPFA_sample_omega_sparse`, data, x, lambda, alpha, seed, iter)
+#' @return List of kept draws and summaries. \code{threshold_draws} holds, for every kept draw,
+#'   the thresholds of items with at most 10 levels (rows in item order).
+.run_chain <- function(data, x0, state0, omega0, prior, warmup, iter, thin, seed, threads, moves) {
+    .Call(`_mmBPFA_run_chain`, data, x0, state0, omega0, prior, warmup, iter, thin, seed, threads, moves)
 }
 
 #' Sample column indicators of the cumulative shrinkage prior (test entry point)
@@ -114,33 +74,27 @@
 #' @param data output of \code{prepare_data}.
 #' @param x latent values, one per observed cell.
 #' @param omega N x H factor scores.
-#' @param alpha item intercepts.
 #' @param state list with lambda (P x H), z (P x H integer), rho, c (1-based), v, a_cusp, theta.
 #' @param prior list with slab_shape, slab_rate, spike_var, a_cusp_shape, a_cusp_rate, rho_a, rho_b.
 #' @param seed,iter seed and iteration.
 #'
 #' @return Updated state.
-.sample_loadings <- function(data, x, omega, alpha, state, prior, seed, iter) {
-    .Call(`_mmBPFA_sample_loadings`, data, x, omega, alpha, state, prior, seed, iter)
+.sample_loadings <- function(data, x, omega, state, prior, seed, iter) {
+    .Call(`_mmBPFA_sample_loadings`, data, x, omega, state, prior, seed, iter)
 }
 
 #' Item scale move
 #'
-#' For each item j, (x_j, lambda_j, alpha_j) -> s_j (x_j, lambda_j, alpha_j). The ranks
-#' of x_j are unchanged, and s_j^2 ~ Gamma((n_j + m_j) / 2, A_j / 2) with
-#' A_j = sum_obs (x_ij - mu_ij)^2 + sum_k z_jk lambda_jk^2 / theta_k: the parameter-expanded
-#' data augmentation of Liu & Wu (1999) for probit models, per item.
-#'
-#' alpha_j is not identified under the rank likelihood (shifting x_j and alpha_j together
-#' changes nothing) and its flat prior makes that direction improper. The move must leave
-#' the proper posterior of x_j + alpha_j invariant, so alpha_j is scaled along but does not
-#' add to the Jacobian; counting it gives shape (n_j + m_j + 1) / 2 and the scales drift up.
+#' For each item j, (x_j, lambda_j) -> s_j (x_j, lambda_j). The ranks of x_j are unchanged,
+#' and s_j^2 ~ Gamma((n_j + m_j) / 2, A_j / 2) with A_j = sum_obs (x_ij - lambda_j' omega_i)^2
+#' + sum_k z_jk lambda_jk^2 / theta_k: the parameter-expanded data augmentation of
+#' Liu & Wu (1999) for probit models, per item.
 #'
 #' @keywords internal
 #'
-#' @return list with x, lambda, alpha and the scales s.
-.item_scale_move <- function(data, x, lambda, z, omega, alpha, theta, seed, iter) {
-    .Call(`_mmBPFA_item_scale_move`, data, x, lambda, z, omega, alpha, theta, seed, iter)
+#' @return list with x, lambda and the scales s.
+.item_scale_move <- function(data, x, lambda, z, omega, theta, seed, iter) {
+    .Call(`_mmBPFA_item_scale_move`, data, x, lambda, z, omega, theta, seed, iter)
 }
 
 #' Column scale move
@@ -155,6 +109,28 @@
     .Call(`_mmBPFA_column_scale_move`, lambda, z, omega, theta, seed, iter)
 }
 
+#' Sample factor scores from observed cells
+#'
+#' omega_i ~ N(S_i sum_{j in obs(i)} lambda_j x_ij, S_i) with
+#' S_i = (sum_{j in obs(i)} lambda_j lambda_j' + I)^-1, drawn through the
+#' Cholesky factor of S_i^-1. Fully observed rows share one precision matrix
+#' and are drawn together; rows missing fewer than half their items start from
+#' the shared matrix and subtract the missing items; rows observed on fewer than
+#' K/2 items use the n_i x n_i sampler of Bhattacharya, Chakraborty & Mallick (2016);
+#' other rows accumulate their observed items. Rows with no observations draw from N(0, I).
+#'
+#' @keywords internal
+#'
+#' @param data output of \code{prepare_data}.
+#' @param x latent values, one per observed cell.
+#' @param lambda P x K loadings.
+#' @param seed,iter seed and iteration; row i uses its own omega-kernel stream.
+#'
+#' @return N x K matrix.
+.sample_omega_sparse <- function(data, x, lambda, seed, iter) {
+    .Call(`_mmBPFA_sample_omega_sparse`, data, x, lambda, seed, iter)
+}
+
 #' Sample latent x for every observed cell
 #'
 #' Within each column, levels are drawn in increasing order: each draw is
@@ -167,12 +143,11 @@
 #' @param x current latent values, one per observed cell.
 #' @param lambda P x K loadings (zero where inactive).
 #' @param omega N x K factor scores.
-#' @param alpha item intercepts, length P.
 #' @param seed,iter seed and iteration; column j uses its own x-kernel stream.
 #'
 #' @return New latent values, one per observed cell.
-.sample_x_sparse <- function(data, x, lambda, omega, alpha, seed, iter) {
-    .Call(`_mmBPFA_sample_x_sparse`, data, x, lambda, omega, alpha, seed, iter)
+.sample_x_sparse <- function(data, x, lambda, omega, seed, iter) {
+    .Call(`_mmBPFA_sample_x_sparse`, data, x, lambda, omega, seed, iter)
 }
 
 #' Whether the package was built with OpenMP

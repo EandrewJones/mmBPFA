@@ -28,7 +28,7 @@ List of accuracy metrics.
 }
 \description{
 \code{check_accuracy} predicts each observed cell from the posterior-mean
-loadings, scores, intercepts and level cutpoints, and reports exact-match
+loadings, scores and level cutpoints, and reports exact-match
 accuracy, RMSE, MAE and the geometric mean probability of the observed data.
 If \code{true_vals} from \code{generate_sim_data} is supplied, it also reports
 RMSE and MAE of the latent quantities. A confusion matrix, precision, recall

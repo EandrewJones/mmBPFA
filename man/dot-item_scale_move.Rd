@@ -4,21 +4,17 @@
 \alias{.item_scale_move}
 \title{Item scale move}
 \usage{
-.item_scale_move(data, x, lambda, z, omega, alpha, theta, seed, iter)
+.item_scale_move(data, x, lambda, z, omega, theta, seed, iter)
 }
 \value{
-list with x, lambda, alpha and the scales s.
+list with x, lambda and the scales s.
 }
 \description{
-For each item j, (x_j, lambda_j, alpha_j) -> s_j (x_j, lambda_j, alpha_j). The ranks
-of x_j are unchanged, and s_j^2 ~ Gamma((n_j + m_j) / 2, A_j / 2) with
-A_j = sum_obs (x_ij - mu_ij)^2 + sum_k z_jk lambda_jk^2 / theta_k: the parameter-expanded
-data augmentation of Liu & Wu (1999) for probit models, per item.
+For each item j, (x_j, lambda_j) -> s_j (x_j, lambda_j). The ranks of x_j are unchanged,
+and s_j^2 ~ Gamma((n_j + m_j) / 2, A_j / 2) with A_j = sum_obs (x_ij - lambda_j' omega_i)^2
+\itemize{
+\item sum_k z_jk lambda_jk^2 / theta_k: the parameter-expanded data augmentation of
+Liu & Wu (1999) for probit models, per item.
 }
-\details{
-alpha_j is not identified under the rank likelihood (shifting x_j and alpha_j together
-changes nothing) and its flat prior makes that direction improper. The move must leave
-the proper posterior of x_j + alpha_j invariant, so alpha_j is scaled along but does not
-add to the Jacobian; counting it gives shape (n_j + m_j + 1) / 2 and the scales drift up.
 }
 \keyword{internal}

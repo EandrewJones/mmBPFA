@@ -176,7 +176,6 @@ arma::vec sample_theta(const arma::mat& lambda, const arma::imat& z, const arma:
 //' @param data output of \code{prepare_data}.
 //' @param x latent values, one per observed cell.
 //' @param omega N x H factor scores.
-//' @param alpha item intercepts.
 //' @param state list with lambda (P x H), z (P x H integer), rho, c (1-based), v, a_cusp, theta.
 //' @param prior list with slab_shape, slab_rate, spike_var, a_cusp_shape, a_cusp_rate, rho_a, rho_b.
 //' @param seed,iter seed and iteration.
@@ -184,7 +183,7 @@ arma::vec sample_theta(const arma::mat& lambda, const arma::imat& z, const arma:
 //' @return Updated state.
 // [[Rcpp::export(name = ".sample_loadings")]]
 Rcpp::List sample_loadings(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& omega,
-                           const arma::vec& alpha, const Rcpp::List& state, const Rcpp::List& prior,
+                           const Rcpp::List& state, const Rcpp::List& prior,
                            double seed, double iter) {
     const mmbpfa::Data d(data);
     const Prior pr(prior);
@@ -202,7 +201,6 @@ Rcpp::List sample_loadings(const Rcpp::List& data, const Rcpp::NumericVector& x,
         // back), and E is updated with one rank-1 correction.
         arma::mat E(d.n, d.p);
         for (int c = 0; c < x.size(); c++) E(d.row_idx[c], d.col_idx[c]) = x[c];
-        E.each_row() += alpha.t();
         E -= omega * lambda.t();
         for (int k = 0; k < H; k++) {
             const arma::vec w = omega.col(k);
@@ -229,13 +227,13 @@ Rcpp::List sample_loadings(const Rcpp::List& data, const Rcpp::NumericVector& x,
             }
         }
     } else {
-    // residual e_c = x_c + alpha_j - lambda_j' omega_i for each observed cell
+    // residual e_c = x_c - lambda_j' omega_i for each observed cell
     const int nnz = x.size();
     std::vector<double> e(nnz);
     #pragma omp parallel for schedule(static) num_threads(mmbpfa::num_threads())
     for (int c = 0; c < nnz; c++) {
         const int j = d.col_idx[c];
-        e[c] = x[c] + alpha[j] - arma::dot(lambda.row(j), omega_t.col(d.row_idx[c]));
+        e[c] = x[c] - arma::dot(lambda.row(j), omega_t.col(d.row_idx[c]));
     }
 
     for (int k = 0; k < H; k++) {

@@ -66,7 +66,8 @@ The `@import` tags in `R/mmBPFA.R` do **not** drive `NAMESPACE`: add dependencie
 **Sampler.**
 - `mmBPFA_sampler()` (R) resolves the priors (`R/priors.R`; `get_priors()` retrieves them) and checks the memory needed for stored draws.
 - `run_one_chain()` (R) initializes a chain from `set.seed(seed + chain - 1)` and calls `.run_chain` (C++, `src/run_chain.cpp`).
-- `.run_chain` runs the whole chain. Each sweep is `sample_x_sparse` → `sample_loadings` → `sample_omega_sparse` → `sample_alpha_sparse`. On kept draws it also computes K and the log-likelihood, with thresholds taken from the gaps between levels of x.
+- `.run_chain` runs the whole chain. Each sweep is `sample_x_sparse` → `sample_loadings` → `sample_omega_sparse`, then the optional scale moves (`moves`, `src/sample_moves.cpp`). On kept draws it also computes K and the log-likelihood, with thresholds taken from the gaps between levels of x.
+- **No item intercepts.** Under the rank likelihood an intercept is not identified (shifting x_j and α_j together changes nothing), and with a flat prior its posterior is improper. So the model has none: the latent location is fixed by ΛΩ', and item difficulty is the level thresholds ("Item Thresholds"). Don't reintroduce a non-identified parameter. Any move that touches one breaks invariance (see design doc §9).
 - Chains run sequentially, with `mclapply`, or on a PSOCK cluster on Windows.
 
 **Kernels (`src/`).**
@@ -75,7 +76,7 @@ The `@import` tags in `R/mmBPFA.R` do **not** drive `NAMESPACE`: add dependencie
   - item inclusion and loadings with a running residual over observed cells; a dense residual matrix is used when the data are fully observed;
   - CUSP column indicators, given the current loadings;
   - the concentration `a_cusp`, slice-sampled with the sticks integrated out. Conditioning on the sticks traps the chain at 0.
-- `sample_alpha_omega_sparse.cpp`:
+- `sample_omega_sparse.cpp`:
   - fully observed rows share one precision matrix and are drawn in one batch;
   - rows that are mostly observed subtract their missing items' outer products from it;
   - sparse rows accumulate their observed items.
@@ -84,7 +85,7 @@ The `@import` tags in `R/mmBPFA.R` do **not** drive `NAMESPACE`: add dependencie
 **Parallelism (`threads.h`).** OpenMP is used over columns, rows and items, with a fixed-order reduction for the log-likelihood. Never draw from R's RNG or call the R API inside a parallel region. Never share an RNG stream between kernels: use `stream_id(kernel, unit)`.
 
 **Dimension conventions.**
-- `lambda` and `z` are P×H, `omega` is N×H, `alpha` has length P, and `c`, `v`, `rho`, `theta` have length H.
+- `lambda` and `z` are P×H, `omega` is N×H, and `c`, `v`, `rho`, `theta` have length H.
 - Column k (1-based) is **on** when `c[k] > k`.
 - A draw's **K** is the number of on columns with at least 3 active items (an identification requirement).
 
