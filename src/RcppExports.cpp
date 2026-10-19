@@ -155,6 +155,23 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// sample_x_sparse
+Rcpp::NumericVector sample_x_sparse(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& lambda, const arma::mat& omega, const arma::vec& alpha, double seed, double iter);
+RcppExport SEXP _mmBPFA_sample_x_sparse(SEXP dataSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP omegaSEXP, SEXP alphaSEXP, SEXP seedSEXP, SEXP iterSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type omega(omegaSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< double >::type seed(seedSEXP);
+    Rcpp::traits::input_parameter< double >::type iter(iterSEXP);
+    rcpp_result_gen = Rcpp::wrap(sample_x_sparse(data, x, lambda, omega, alpha, seed, iter));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_mmBPFA_rng_draws", (DL_FUNC) &_mmBPFA_rng_draws, 4},
@@ -167,6 +184,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mmBPFA_feature_loglik_ratio_r", (DL_FUNC) &_mmBPFA_feature_loglik_ratio_r, 2},
     {"_mmBPFA_sample_lambda_and_zeros", (DL_FUNC) &_mmBPFA_sample_lambda_and_zeros, 12},
     {"_mmBPFA_sample_omega", (DL_FUNC) &_mmBPFA_sample_omega, 3},
+    {"_mmBPFA_sample_x_sparse", (DL_FUNC) &_mmBPFA_sample_x_sparse, 7},
     {NULL, NULL, 0}
 };
 

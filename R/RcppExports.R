@@ -126,3 +126,23 @@ sample_omega <- function(lambda, x, alpha) {
     .Call(`_mmBPFA_sample_omega`, lambda, x, alpha)
 }
 
+#' Sample latent x for every observed cell
+#'
+#' Within each column, levels are drawn in increasing order: each draw is
+#' bounded below by the maximum of the level just drawn and above by the
+#' minimum of the next level's current values. Each column costs O(n_j).
+#'
+#' @keywords internal
+#'
+#' @param data output of \code{prepare_data}.
+#' @param x current latent values, one per observed cell.
+#' @param lambda P x K loadings (zero where inactive).
+#' @param omega N x K factor scores.
+#' @param alpha item intercepts, length P.
+#' @param seed,iter seed and iteration; column j uses its own x-kernel stream.
+#'
+#' @return New latent values, one per observed cell.
+.sample_x_sparse <- function(data, x, lambda, omega, alpha, seed, iter) {
+    .Call(`_mmBPFA_sample_x_sparse`, data, x, lambda, omega, alpha, seed, iter)
+}
+
