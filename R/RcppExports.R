@@ -149,6 +149,52 @@ sample_lambda_and_zeros <- function(x, lambda, zeros, omega, alpha, gamma_k, dc,
     .Call(`_mmBPFA_sample_lambda_and_zeros`, x, lambda, zeros, omega, alpha, gamma_k, dc, ibp_a, ibp_b, tau, sparse, infinite)
 }
 
+#' Sample column indicators of the cumulative shrinkage prior (test entry point)
+#' @keywords internal
+.sample_column_indicators <- function(lambda, z, v, prior, seed, iter) {
+    .Call(`_mmBPFA_sample_column_indicators`, lambda, z, v, prior, seed, iter)
+}
+
+#' Sample stick-breaking weights (test entry point)
+#' @keywords internal
+.sample_sticks <- function(c, a_cusp, prior, seed, iter) {
+    .Call(`_mmBPFA_sample_sticks`, c, a_cusp, prior, seed, iter)
+}
+
+#' Sample the cumulative shrinkage concentration given the indicators (test entry point)
+#' @keywords internal
+.sample_a_cusp <- function(c, a_current, prior, seed, iter) {
+    .Call(`_mmBPFA_sample_a_cusp`, c, a_current, prior, seed, iter)
+}
+
+#' Sample column slab variances (test entry point)
+#' @keywords internal
+.sample_theta <- function(lambda, z, c, prior, seed, iter) {
+    .Call(`_mmBPFA_sample_theta`, lambda, z, c, prior, seed, iter)
+}
+
+#' One Gibbs update of the loadings block
+#'
+#' Sweeps the columns, updating each item's inclusion and loading with a
+#' running residual over observed cells only, then the column inclusion
+#' probabilities, column indicators, the concentration (sticks integrated out),
+#' stick weights and slab variances.
+#'
+#' @keywords internal
+#'
+#' @param data output of \code{prepare_data}.
+#' @param x latent values, one per observed cell.
+#' @param omega N x H factor scores.
+#' @param alpha item intercepts.
+#' @param state list with lambda (P x H), z (P x H integer), rho, c (1-based), v, a_cusp, theta.
+#' @param prior list with slab_shape, slab_rate, spike_var, a_cusp_shape, a_cusp_rate, rho_a, rho_b.
+#' @param seed,iter seed and iteration.
+#'
+#' @return Updated state.
+.sample_loadings <- function(data, x, omega, alpha, state, prior, seed, iter) {
+    .Call(`_mmBPFA_sample_loadings`, data, x, omega, alpha, state, prior, seed, iter)
+}
+
 #' Sampling step for omega matrix (Factor Scores) of dimension N x K.
 #'
 #' @keywords internal

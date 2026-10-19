@@ -174,6 +174,86 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// sample_column_indicators
+arma::ivec sample_column_indicators(const arma::mat& lambda, const arma::imat& z, const arma::vec& v, const Rcpp::List& prior, double seed, double iter);
+RcppExport SEXP _mmBPFA_sample_column_indicators(SEXP lambdaSEXP, SEXP zSEXP, SEXP vSEXP, SEXP priorSEXP, SEXP seedSEXP, SEXP iterSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< const arma::imat& >::type z(zSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type v(vSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type prior(priorSEXP);
+    Rcpp::traits::input_parameter< double >::type seed(seedSEXP);
+    Rcpp::traits::input_parameter< double >::type iter(iterSEXP);
+    rcpp_result_gen = Rcpp::wrap(sample_column_indicators(lambda, z, v, prior, seed, iter));
+    return rcpp_result_gen;
+END_RCPP
+}
+// sample_sticks
+Rcpp::List sample_sticks(const arma::ivec& c, double a_cusp, const Rcpp::List& prior, double seed, double iter);
+RcppExport SEXP _mmBPFA_sample_sticks(SEXP cSEXP, SEXP a_cuspSEXP, SEXP priorSEXP, SEXP seedSEXP, SEXP iterSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::ivec& >::type c(cSEXP);
+    Rcpp::traits::input_parameter< double >::type a_cusp(a_cuspSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type prior(priorSEXP);
+    Rcpp::traits::input_parameter< double >::type seed(seedSEXP);
+    Rcpp::traits::input_parameter< double >::type iter(iterSEXP);
+    rcpp_result_gen = Rcpp::wrap(sample_sticks(c, a_cusp, prior, seed, iter));
+    return rcpp_result_gen;
+END_RCPP
+}
+// sample_a_cusp
+double sample_a_cusp(const arma::ivec& c, double a_current, const Rcpp::List& prior, double seed, double iter);
+RcppExport SEXP _mmBPFA_sample_a_cusp(SEXP cSEXP, SEXP a_currentSEXP, SEXP priorSEXP, SEXP seedSEXP, SEXP iterSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::ivec& >::type c(cSEXP);
+    Rcpp::traits::input_parameter< double >::type a_current(a_currentSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type prior(priorSEXP);
+    Rcpp::traits::input_parameter< double >::type seed(seedSEXP);
+    Rcpp::traits::input_parameter< double >::type iter(iterSEXP);
+    rcpp_result_gen = Rcpp::wrap(sample_a_cusp(c, a_current, prior, seed, iter));
+    return rcpp_result_gen;
+END_RCPP
+}
+// sample_theta
+arma::vec sample_theta(const arma::mat& lambda, const arma::imat& z, const arma::ivec& c, const Rcpp::List& prior, double seed, double iter);
+RcppExport SEXP _mmBPFA_sample_theta(SEXP lambdaSEXP, SEXP zSEXP, SEXP cSEXP, SEXP priorSEXP, SEXP seedSEXP, SEXP iterSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< const arma::imat& >::type z(zSEXP);
+    Rcpp::traits::input_parameter< const arma::ivec& >::type c(cSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type prior(priorSEXP);
+    Rcpp::traits::input_parameter< double >::type seed(seedSEXP);
+    Rcpp::traits::input_parameter< double >::type iter(iterSEXP);
+    rcpp_result_gen = Rcpp::wrap(sample_theta(lambda, z, c, prior, seed, iter));
+    return rcpp_result_gen;
+END_RCPP
+}
+// sample_loadings
+Rcpp::List sample_loadings(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& omega, const arma::vec& alpha, const Rcpp::List& state, const Rcpp::List& prior, double seed, double iter);
+RcppExport SEXP _mmBPFA_sample_loadings(SEXP dataSEXP, SEXP xSEXP, SEXP omegaSEXP, SEXP alphaSEXP, SEXP stateSEXP, SEXP priorSEXP, SEXP seedSEXP, SEXP iterSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type omega(omegaSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type state(stateSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type prior(priorSEXP);
+    Rcpp::traits::input_parameter< double >::type seed(seedSEXP);
+    Rcpp::traits::input_parameter< double >::type iter(iterSEXP);
+    rcpp_result_gen = Rcpp::wrap(sample_loadings(data, x, omega, alpha, state, prior, seed, iter));
+    return rcpp_result_gen;
+END_RCPP
+}
 // sample_omega
 arma::mat sample_omega(arma::mat lambda, arma::mat x, arma::vec alpha);
 RcppExport SEXP _mmBPFA_sample_omega(SEXP lambdaSEXP, SEXP xSEXP, SEXP alphaSEXP) {
@@ -217,6 +297,11 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mmBPFA_sample_IBP_b", (DL_FUNC) &_mmBPFA_sample_IBP_b, 3},
     {"_mmBPFA_feature_loglik_ratio_r", (DL_FUNC) &_mmBPFA_feature_loglik_ratio_r, 2},
     {"_mmBPFA_sample_lambda_and_zeros", (DL_FUNC) &_mmBPFA_sample_lambda_and_zeros, 12},
+    {"_mmBPFA_sample_column_indicators", (DL_FUNC) &_mmBPFA_sample_column_indicators, 6},
+    {"_mmBPFA_sample_sticks", (DL_FUNC) &_mmBPFA_sample_sticks, 5},
+    {"_mmBPFA_sample_a_cusp", (DL_FUNC) &_mmBPFA_sample_a_cusp, 5},
+    {"_mmBPFA_sample_theta", (DL_FUNC) &_mmBPFA_sample_theta, 6},
+    {"_mmBPFA_sample_loadings", (DL_FUNC) &_mmBPFA_sample_loadings, 8},
     {"_mmBPFA_sample_omega", (DL_FUNC) &_mmBPFA_sample_omega, 3},
     {"_mmBPFA_sample_x_sparse", (DL_FUNC) &_mmBPFA_sample_x_sparse, 7},
     {NULL, NULL, 0}
