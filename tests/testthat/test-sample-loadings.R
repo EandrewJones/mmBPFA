@@ -23,8 +23,9 @@ lz_fixture <- function(n = 150, p = 8, miss = 0.3, seed = 1) {
   list(d = d, x = xm[cbind(d$row_idx + 1, d$col_idx + 1)], om = om, y = y)
 }
 
-test_that("lambda given z = 1 is Gaussian with observed-only precision", {
-  f <- lz_fixture()
+test_that("lambda given z = 1 is Gaussian, with and without missing cells", {
+  for (miss in c(0.3, 0)) {
+  f <- lz_fixture(miss = miss)
   st <- new_state(8, 1, rho = 1, theta = 2)
   obs <- !is.na(f$y)
   xm <- cells_to_matrix(f$d, f$x)
@@ -33,10 +34,12 @@ test_that("lambda given z = 1 is Gaussian with observed-only precision", {
   l <- sapply(1:4000, function(t) .sample_loadings(f$d, f$x, f$om, rep(0, 8), st, default_prior(), 1, t)$lambda[, 1])
   expect_z(rowMeans(l), mu, sqrt(1 / prec / 4000))
   expect_rel(apply(l, 1, var), 1 / prec, 0.1)
+  }
 })
 
-test_that("z_jk is Bernoulli with the collapsed log-odds", {
-  f <- lz_fixture(n = 40, p = 5, seed = 2)
+test_that("z_jk is Bernoulli with the collapsed log-odds, with and without missing cells", {
+  for (miss in c(0.3, 0)) {
+  f <- lz_fixture(n = 40, p = 5, miss = miss, seed = 2)
   st <- new_state(5, 1, rho = 0.3, theta = 1)
   obs <- !is.na(f$y)
   xm <- cells_to_matrix(f$d, f$x)
@@ -46,6 +49,7 @@ test_that("z_jk is Bernoulli with the collapsed log-odds", {
   want <- plogis(lo)
   z <- sapply(1:6000, function(t) .sample_loadings(f$d, f$x, f$om, rep(0, 5), st, default_prior(), 2, t)$z[, 1])
   expect_z(rowMeans(z), want, sqrt(pmax(want * (1 - want), 1e-4) / 6000))
+  }
 })
 
 test_that("column indicators follow the CUSP categorical given the loadings", {
@@ -136,4 +140,16 @@ test_that("with no data the sampler leaves the CUSP prior on the number of activ
   })
   expect_rel(mean(on), mean(prior_on), 0.06)
   expect_rel(var(on), var(prior_on), 0.12)
+})
+
+test_that("a loadings sweep on fully observed data uses one matrix-vector product per column", {
+  skip_on_cran()
+  set.seed(1); n <- 2000; p <- 200; H <- 30
+  y <- matrix(rbinom(n * p, 1, 0.5), n, p); d <- prepare_data(y); x <- initial_x(d)
+  st <- new_state(p, H); st$lambda <- matrix(rnorm(p * H, 0, 0.3), p, H); st$z[] <- 1L
+  om <- matrix(rnorm(n * H), n, H)
+  t0 <- proc.time()[["elapsed"]]
+  for (r in 1:5) .sample_loadings(d, x, om, rep(0, p), st, default_prior(), 1, r)
+  # was 0.044 s with per-cell loops; ~0.026 s with the reference BLAS (faster with OpenBLAS/MKL)
+  expect_lt((proc.time()[["elapsed"]] - t0) / 5, 0.035)
 })

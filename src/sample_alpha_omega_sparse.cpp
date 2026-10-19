@@ -66,13 +66,19 @@ arma::vec sample_alpha_sparse(const Rcpp::List& data, const Rcpp::NumericVector&
                               double seed, double iter) {
     const mmbpfa::Data d(data);
     const arma::mat omega_t = omega.t();
+    const arma::rowvec omega_sum = arma::sum(omega, 0);   // sum_i omega_i, for fully observed items
     arma::vec alpha(d.p, arma::fill::zeros);
     for (int j = 0; j < d.p; j++) {
         const int begin = d.col_ptr[j], end = d.col_ptr[j + 1], n_j = end - begin;
         if (n_j == 0) continue;
         const arma::rowvec lam_j = lambda.row(j);
         double total = 0;
-        for (int c = begin; c < end; c++) total += arma::dot(lam_j, omega_t.col(d.row_idx[c])) - x[c];
+        if (n_j == d.n) {
+            total = arma::dot(lam_j, omega_sum);
+            for (int c = begin; c < end; c++) total -= x[c];
+        } else {
+            for (int c = begin; c < end; c++) total += arma::dot(lam_j, omega_t.col(d.row_idx[c])) - x[c];
+        }
         mmbpfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter), mmbpfa::stream_id(mmbpfa::KERNEL_ALPHA, j));
         alpha[j] = total / n_j + rng.norm() / std::sqrt(static_cast<double>(n_j));
     }

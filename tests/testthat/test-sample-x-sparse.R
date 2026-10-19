@@ -94,3 +94,4 @@ test_that("a continuous column of 5000 rows costs O(n) per sweep", {
   for (t in 1:10) x <- .sample_x_sparse(d, x, lam, om, rep(0, 20), 1, t)
   expect_lt((proc.time()[["elapsed"]] - t0) / 10, 0.05)
 })
+

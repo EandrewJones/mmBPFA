@@ -195,6 +195,35 @@ Rcpp::List sample_loadings(const Rcpp::List& data, const Rcpp::NumericVector& x,
     const int H = lambda.n_cols;
     const arma::mat omega_t = omega.t();
 
+    if (static_cast<double>(x.size()) == static_cast<double>(d.n) * d.p) {
+        // Fully observed: dense residual E (N x P). For column k, the scores of all
+        // items come from one product E' omega_k (E with column k's loadings added
+        // back), and E is updated with one rank-1 correction.
+        arma::mat E(d.n, d.p);
+        for (int c = 0; c < x.size(); c++) E(d.row_idx[c], d.col_idx[c]) = x[c];
+        E.each_row() += alpha.t();
+        E -= omega * lambda.t();
+        for (int k = 0; k < H; k++) {
+            const arma::vec w = omega.col(k);
+            const double ww = arma::dot(w, w), prior_prec = 1.0 / theta_in[k], prec = ww + prior_prec;
+            const double logit_rho = std::log(rho[k]) - std::log1p(-rho[k]);
+            const arma::vec old = lambda.col(k);
+            const arma::vec g = E.t() * w + old * ww;
+            arma::vec delta(d.p);
+            for (int j = 0; j < d.p; j++) {
+                const double mu = g[j] / prec;
+                const double lo = logit_rho + 0.5 * (std::log(prior_prec) - std::log(prec)) + 0.5 * prec * mu * mu;
+                mmbpfa::Rng rng(static_cast<uint64_t>(seed), static_cast<uint64_t>(iter),
+                                mmbpfa::stream_id(mmbpfa::KERNEL_LOADINGS, static_cast<uint64_t>(k) * d.p + j));
+                const int on = rng.unif() < inv_logit(lo);
+                const double lam = on ? mu + rng.norm() / std::sqrt(prec) : 0.0;
+                z(j, k) = on;
+                lambda(j, k) = lam;
+                delta[j] = old[j] - lam;
+            }
+            E += w * delta.t();
+        }
+    } else {
     // residual e_c = x_c + alpha_j - lambda_j' omega_i for each observed cell
     const int nnz = x.size();
     std::vector<double> e(nnz);
@@ -227,6 +256,7 @@ Rcpp::List sample_loadings(const Rcpp::List& data, const Rcpp::NumericVector& x,
             if (lam != 0)
                 for (int c = begin; c < end; c++) e[c] -= lam * omega(d.row_idx[c], k);
         }
+    }
     }
 
     mmbpfa::Rng crng = column_rng(seed, iter, 4);
