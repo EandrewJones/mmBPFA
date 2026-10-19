@@ -2,22 +2,36 @@
 % Please edit documentation in R/process_results.R
 \name{process_results}
 \alias{process_results}
-\title{Process results from mmBPFA sampling run}
+\title{Process results from an mmBPFA sampling run}
 \usage{
-process_results(mcmc_object, SE = T, p = c(0.05, 0.95), to_tibble = T)
+process_results(mcmc_object, SE = TRUE, p = c(0.05, 0.95), to_tibble = TRUE)
 }
 \arguments{
-\item{mcmc_object}{An S3 object of class \code{bpfa.results} from mmBPFA sampling run.}
+\item{mcmc_object}{Output of \code{mmBPFA_sampler} (class \code{bpfa.results}).}
 
-\item{SE}{A boolean indicating whether to calculate standard error credibility intervals around posterior estimates.}
+\item{SE}{Whether to add credible intervals.}
 
-\item{p}{a vector indicating the lower and upper probability bounds for the credibility intervals. Default is c(0.05, 0.95).}
+\item{p}{Lower and upper probabilities of the credible intervals.}
 
-\item{to_tibble}{A boolean indicating whether to convert output to tibbles for use in tidy workflow. Default is TRUE.}
+\item{to_tibble}{Whether to return tibbles.}
 }
 \value{
-An S3 object of class \code{mcmc.output.processed} containing the processed posterior margins.
+Object of class \code{mcmc.output.processed} with the stable
+dimensions, the K distribution (and R-hat for K with several chains), loadings
+on the sampler and copula scales, factor scores, slab variances, item
+intercepts, log-likelihoods, level cutpoints, the uncounted correlation share
+and the priors.
 }
 \description{
-\code{process_results} ingests raw results from \code{mmBPFA_sampler} and returns processed estimates of posterior quantities of interest.
+\code{process_results} pools the kept draws of all chains and returns
+posterior summaries of the counted dimensions: columns that are switched on
+and have at least three active items (design §4.4). Draws are relabelled
+against a pivot draw with the median number of dimensions, and each matched
+dimension is sign-aligned to the pivot before averaging, so label switching
+and sign flips (within or across chains) do not cancel.
+}
+\details{
+The model's correlation uses every column; the loadings and scores reported
+here use only the counted dimensions. "Uncounted Correlation Share" reports
+how much of the copula correlation the uncounted columns carry.
 }

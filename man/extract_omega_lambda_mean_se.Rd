@@ -2,7 +2,7 @@
 % Please edit documentation in R/process_results.R
 \name{extract_omega_lambda_mean_se}
 \alias{extract_omega_lambda_mean_se}
-\title{function to estimate factor means and se's}
+\title{Posterior means (and credible intervals) of aligned loadings or scores}
 \usage{
 extract_omega_lambda_mean_se(
   x,
@@ -14,6 +14,6 @@ extract_omega_lambda_mean_se(
 )
 }
 \description{
-function to estimate factor means and se's
+Posterior means (and credible intervals) of aligned loadings or scores
 }
 \keyword{internal}

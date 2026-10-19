@@ -62,6 +62,18 @@ double log_likelihood(const mmbpfa::Data& d, const std::vector<double>& th, cons
 
 } // namespace
 
+//' Log-likelihood of the observed data given latent x (test entry point)
+//'
+//' Thresholds are the midpoints between adjacent levels of x, as in the sampler.
+//'
+//' @keywords internal
+// [[Rcpp::export(name = ".log_likelihood_from_x")]]
+double log_likelihood_from_x(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& lambda,
+                             const arma::mat& omega, const arma::vec& alpha) {
+    const mmbpfa::Data d(data);
+    return log_likelihood(d, level_thresholds(d, x), lambda, omega, alpha);
+}
+
 //' Run one chain
 //'
 //' @keywords internal

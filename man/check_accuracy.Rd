@@ -4,26 +4,33 @@
 \alias{check_accuracy}
 \title{Function to check reconstruction accuracy}
 \usage{
-check_accuracy(dat, results, true_vals = NULL, confusion = T, return_preds = F)
+check_accuracy(
+  dat,
+  results,
+  true_vals = NULL,
+  confusion = TRUE,
+  return_preds = FALSE
+)
 }
 \arguments{
 \item{dat}{Data matrix.}
 
-\item{results}{processed results from \code{process_results}. Must not include standard errors.}
+\item{results}{processed results from \code{process_results}, without standard errors.}
 
 \item{true_vals}{Optional list of true latent values from \code{generate_sim_data}.}
 
-\item{confusion}{Boolean indicating whether to return a confusion matrix. Only works for "fixed" margin data.}
+\item{confusion}{Whether to return a confusion matrix.}
 
-\item{return_preds}{Boolean indicating whether to also return the predicted data matrix.}
+\item{return_preds}{Whether to also return the predicted data matrix.}
 }
 \value{
-List of observed accuracy and accuracy metrics (rmse and mae). If confusion is TRUE, also returns confusion matrix results.
+List of accuracy metrics.
 }
 \description{
-\code{check_accuracy} ingests the cleaned results from \code{process_results} without standard errors and
-returns the accuracy in reconstructing the observed data. If \code{true_vals} from \code{generate_sim_data}
-is supplied, the function will also return the RMSE and MAE of posterior predictions for the latent values.
-A confusion matrix, precision, recall, and Kappa score are also available via \code{confusion = TRUE} for data
-with fixed marginal distributions.
+\code{check_accuracy} predicts each observed cell from the posterior-mean
+loadings, scores, intercepts and level cutpoints, and reports exact-match
+accuracy, RMSE, MAE and the geometric mean probability of the observed data.
+If \code{true_vals} from \code{generate_sim_data} is supplied, it also reports
+RMSE and MAE of the latent quantities. A confusion matrix, precision, recall
+and Kappa are available when every item has the same set of observed values.
 }

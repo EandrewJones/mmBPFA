@@ -9,6 +9,15 @@
     .Call(`_mmBPFA_rng_stream`, seed, iter, stream, n)
 }
 
+#' Log-likelihood of the observed data given latent x (test entry point)
+#'
+#' Thresholds are the midpoints between adjacent levels of x, as in the sampler.
+#'
+#' @keywords internal
+.log_likelihood_from_x <- function(data, x, lambda, omega, alpha) {
+    .Call(`_mmBPFA_log_likelihood_from_x`, data, x, lambda, omega, alpha)
+}
+
 #' Run one chain
 #'
 #' @keywords internal

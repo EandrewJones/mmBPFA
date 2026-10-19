@@ -39,6 +39,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// log_likelihood_from_x
+double log_likelihood_from_x(const Rcpp::List& data, const Rcpp::NumericVector& x, const arma::mat& lambda, const arma::mat& omega, const arma::vec& alpha);
+RcppExport SEXP _mmBPFA_log_likelihood_from_x(SEXP dataSEXP, SEXP xSEXP, SEXP lambdaSEXP, SEXP omegaSEXP, SEXP alphaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type omega(omegaSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type alpha(alphaSEXP);
+    rcpp_result_gen = Rcpp::wrap(log_likelihood_from_x(data, x, lambda, omega, alpha));
+    return rcpp_result_gen;
+END_RCPP
+}
 // run_chain
 Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List state0, arma::mat omega0, arma::vec alpha0, const Rcpp::List& prior, int warmup, int iter, int thin, double seed, int threads);
 RcppExport SEXP _mmBPFA_run_chain(SEXP dataSEXP, SEXP x0SEXP, SEXP state0SEXP, SEXP omega0SEXP, SEXP alpha0SEXP, SEXP priorSEXP, SEXP warmupSEXP, SEXP iterSEXP, SEXP thinSEXP, SEXP seedSEXP, SEXP threadsSEXP) {
@@ -213,6 +228,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_mmBPFA_rng_draws", (DL_FUNC) &_mmBPFA_rng_draws, 4},
     {"_mmBPFA_rng_stream", (DL_FUNC) &_mmBPFA_rng_stream, 4},
+    {"_mmBPFA_log_likelihood_from_x", (DL_FUNC) &_mmBPFA_log_likelihood_from_x, 5},
     {"_mmBPFA_run_chain", (DL_FUNC) &_mmBPFA_run_chain, 11},
     {"_mmBPFA_sample_alpha_sparse", (DL_FUNC) &_mmBPFA_sample_alpha_sparse, 6},
     {"_mmBPFA_sample_omega_sparse", (DL_FUNC) &_mmBPFA_sample_omega_sparse, 6},
