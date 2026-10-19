@@ -7,4 +7,4 @@
 ^LICENSE\.md$
 ^\.github$
 ^vignettes/.*_cache
-^pkgdown$
+^pkgdown$^bench$

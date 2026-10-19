@@ -84,3 +84,8 @@ test_that("runs whose stored draws would exceed the memory limit stop before sam
                "Stored draws would need about .* GB .*increase `thin`")
   expect_silent(utils::capture.output(mmBPFA_sampler(y, warmup = 1, iter = 2, thin = 1, max_memory_gb = 1e-3)))
 })
+
+test_that("each chain reports its sampling time per sweep", {
+  res <- quiet_run(small_binary(), K_start = 4, warmup = 5, iter = 10, thin = 1)
+  expect_true(is.numeric(res[[1]]$seconds_per_sweep) && res[[1]]$seconds_per_sweep > 0)
+})

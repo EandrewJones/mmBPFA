@@ -1,5 +1,6 @@
 // One MCMC chain, run entirely in C++.
 #include <RcppArmadillo.h>
+#include <chrono>
 #include <cmath>
 #include <vector>
 #include "data_structure.h"
@@ -107,6 +108,7 @@ Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List 
     std::vector<double> th_sum;
 
     int kept = 0;
+    const auto start = std::chrono::steady_clock::now();
     for (int t = 1; t <= warmup + iter; t++) {
         arma::mat lambda = Rcpp::as<arma::mat>(state["lambda"]);
         x = sample_x_sparse(data, x, lambda, omega, alpha, seed, t);
@@ -138,6 +140,7 @@ Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List 
         }
         if (t % 50 == 0) Rcpp::checkUserInterrupt();
     }
+    const double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
     for (double& v : th_sum) v /= std::max(kept, 1);
 
     return Rcpp::List::create(
@@ -145,5 +148,6 @@ Rcpp::List run_chain(const Rcpp::List& data, Rcpp::NumericVector x0, Rcpp::List 
         Rcpp::Named("omega") = keep_omega, Rcpp::Named("alpha") = keep_alpha,
         Rcpp::Named("theta") = keep_theta, Rcpp::Named("a_cusp") = keep_a,
         Rcpp::Named("K") = keep_K, Rcpp::Named("log_lik") = keep_ll,
-        Rcpp::Named("thresholds") = th_sum);
+        Rcpp::Named("thresholds") = th_sum,
+        Rcpp::Named("seconds_per_sweep") = seconds / (warmup + iter));
 }

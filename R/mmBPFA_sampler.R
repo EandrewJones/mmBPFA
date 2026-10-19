@@ -28,7 +28,7 @@
 #'   each holding the kept draws (\code{lambda}, \code{z}, \code{c}, \code{omega},
 #'   \code{alpha}, \code{theta}, \code{a_cusp}), the number of counted dimensions
 #'   \code{K} and the log-likelihood \code{log_lik} per draw, and posterior-mean level
-#'   \code{thresholds}. Attributes record the priors (see \code{\link{get_priors}})
+#'   \code{thresholds}, and \code{seconds_per_sweep} (sampling time, excluding setup). Attributes record the priors (see \code{\link{get_priors}})
 #'   and the run settings.
 #'
 #' @export
