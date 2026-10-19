@@ -100,6 +100,6 @@ initial_x <- function(data) {
     n_j <- diff(data$col_ptr)[col]
     pos <- seq_len(nnz) - data$col_ptr[col]               # 1-based position within column
     level_id <- data$lvl_col_ptr[col] + data$level         # global level index
-    mid <- ave(pos, level_id, FUN = mean)
+    mid <- stats::ave(pos, level_id, FUN = mean)
     qnorm(mid / (n_j + 1))
 }

@@ -1,21 +1,22 @@
 Package: mmBPFA
 Type: Package
 Title: Multi-Modal Beta-Process Factor Analysis
-Version: 1.0
+Version: 1.1.0
 Date: 2020-07-07
 Author: Evan Jones [aut, cre]
 Maintainer: Evan Jones <evan.a.jones3@gmail.com>
-Description: A semi-parametric, multidimensional Bayesian factor analysis for multimodal data.
-             By combining a beta-process prior (Knowles and Ghahramani 2011) on the factor loadings matrix
-             and treating the observed margins as arbitrary manifestations of a latent Gaussian copula (Murray et al. 2013),
-             this package allows the user to perform a factor analysis on data with any
-             combination of marginal distributions (continuous, discrete, or both)
-             without first specifying the dimensionality (K) of the data. The
-             non-parametric prior automatically learns the true dimensionality.
-             Potential applications include traditionaldimension reduction, multidimensional
-             scaling (item-response theory), and missing data imputation. The sampler is
-             implemented in C++ for improved speed and includes post-processing functions
-             that are amenable to a tidy workflow.
+Description: A semi-parametric Bayesian factor analysis for multimodal data.
+             Observed items with any mix of binary, ordinal, count and continuous
+             margins are treated as monotone transformations of a latent Gaussian
+             copula through the extended rank likelihood (Hoff 2007; Murray et al. 2013),
+             so no margin has to be modelled. The number of dimensions is learned with a
+             cumulative shrinkage prior over factors (Legramanti, Durante and Dunson 2020)
+             and each item's inclusion on each factor is learned within factors (Schiavon,
+             Canale and Dunson 2022), so the fit reports both how many dimensions the data
+             support and which items load on each. Only observed cells enter the sampler,
+             which runs in C++ with OpenMP, so its cost scales with the number of observed
+             cells. Applications include dimension reduction, multidimensional scaling
+             (item-response theory), and recommendation over sparse multimodal ratings.
 License: MIT + file LICENSE
 URL: https://github.com/EandrewJones/mmBPFA
 BugReports: https://github.com/EandrewJones/mmBPFA/issues
@@ -24,7 +25,6 @@ Depends:
 Imports:
     abind,
     dplyr (>= 0.8.5),
-    mvtnorm,
     purrr,
     parallel,
     rdist,
@@ -32,9 +32,7 @@ Imports:
     RcppArmadillo (>= 0.9.870.2.0),
     stats,
     tibble,
-    tictoc,
     tidyr,
-    truncnorm,
     utils,
     zeallot (>= 0.1.0)
 Suggests:

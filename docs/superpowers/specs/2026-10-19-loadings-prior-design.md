@@ -295,6 +295,40 @@ Two data seeds per setting, starts at 2, 10 and 30, 2,000 iterations.
 
 **Caveat found during implementation.** The spike harness drew the CUSP concentration given the sticks. Once every column is off, the sticks round to 1 and the concentration to exactly 0, which makes K = 0 absorbing in floating point. The package draws the concentration with the sticks integrated out instead. So the K = 0 collapses of E and E2 may come partly from this trap, not only from their design flaws as diagnosed in the table above. Candidate C never reached K = 0, so the decision stands.
 
+### Stage-2 results on the package sampler
+
+21 data-generating processes, N = 400, P = 60, true K = 3 (4 for multi-view). Three chains per design, started at K = 2, 10 and 30, each with 3,000 warmup and 3,000 sampling iterations.
+
+| Outcome | Designs | Median K (starts 2/10/30) | R-hat for K |
+|---|---|---|---|
+| Exact K from every start; F1 0.85–0.90 | balanced binary, Likert, J-shaped Likert, Poisson, negative binomial, power-law counts, continuous, censored, t-copula | 3/3/3 | ≤ 1.05 |
+| Within 1 of truth, chains agree | multi-view (truth 4), random responders, top-k as binary, zero-inflation from the copula, MNAR exposure | 5/4/4, 4/3/3, 3/3/4, 4/3/3, 4/4/4 | ≤ 1.11 |
+| Flagged by R-hat | clustered users, 90% MCAR, near-duplicate pair, 2% click-through | 3/4/2, 3/3/5, 3/4/5, 2/7/15 | 1.26–8.0 |
+| Model limits (chains agree) | one-hot nominal, structural zeros, rank positions | ~24, 0, 0 | ≤ 1.14 |
+
+- **Slow mixing, not stuck.** On information-poor data (rare positives, high sparsity), chains from extreme starts take about 15k iterations to agree (22k-iteration traces). The cause is the known slow mixing of data augmentation for rare-event probit models (Johndrow et al. 2019).
+- **A collapsed column switch does not help.** A spike version that integrated loadings, inclusions and the slab variance out of the column switch mixed no better, so it was not adopted.
+- **The diagnostic works.** R-hat for K flags every design where chains disagree.
+
+### Performance
+
+A single-threaded sweep at 400 × 60, H = 30, went from about 35 ms to about 6 ms:
+- **ω:** fully observed rows are drawn in one batch; mostly observed rows subtract their missing items; rows with fewer than H/2 observed items use the Bhattacharya et al. (2016) sampler.
+- **Dense paths:** the loadings sweep and α use matrix-vector work when the data are fully observed.
+- **Threads:** OpenMP gives 3× (dense) to 5× (sparse) at 8 threads, with bit-identical draws.
+
+Benchmark: `bench/scaling.R`. Timed inside the chain with H = 30, reference BLAS, on a 24-core machine.
+
+| N × P | Missing | Observed cells | ms/sweep, 1 thread | ms/sweep, 8 threads | ns per cell per column (8 threads) |
+|---|---|---|---|---|---|
+| 2,000 × 1,000 | 0% | 2.0M | 344 | 102 | 1.7 |
+| 2,000 × 1,000 | 90% | 200k | 128 | 22 | 3.7 |
+| 20,000 × 10,000 | 90% | 20M | 14,414 | 2,108 | 3.5 |
+| 20,000 × 10,000 | 99% | 2.0M | 1,481 | 233 | 3.9 |
+| 20,000 × 10,000 | 99.9% | 200k | 164 | 57 | 9.5 |
+
+Cost is linear in the number of observed cells from about 200k cells upward. Below that, fixed per-row and per-column costs dominate.
+
 ## 9. Open questions
 
 **Waiting on running experiments** (two seeds, the full grid):
